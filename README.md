@@ -2,7 +2,7 @@
 
 Dashboards interativos de execução orçamentária do Governo do Distrito Federal, publicados via GitHub Pages e alimentados por ETL automatizado a partir do banco Oracle.
 
-🔗 **Acesso público:** https://sefindf.github.io/dashboard/
+🔗 **Acesso público:** https://suop-df.github.io/dashboard/
 
 ---
 
@@ -137,11 +137,11 @@ O workflow `etl.yml` roda no servidor do GDF via runner self-hosted instalado em
 
 ### Registrar o runner
 
-1. Acesse: `github.com/sefindf/dashboard` → Settings → Actions → Runners → **New self-hosted runner**
+1. Acesse: `github.com/suop-df/dashboard` → Settings → Actions → Runners → **New self-hosted runner**
 2. Siga as instruções para Windows
 3. Configure com:
    ```cmd
-   .\config.cmd --url https://github.com/sefindf/dashboard --token <TOKEN>
+   .\config.cmd --url https://github.com/suop-df/dashboard --token <TOKEN>
    ```
 4. Inicie o runner:
    ```cmd
@@ -197,7 +197,7 @@ Colaboradores não precisam de acesso à pasta local do administrador. O fluxo �
 ### 1. Clonar o repositório
 
 ```cmd
-git clone https://github.com/sefindf/dashboard.git
+git clone https://github.com/suop-df/dashboard.git
 ```
 
 Isso baixa uma cópia completa do projeto para a máquina do colaborador.
@@ -224,7 +224,7 @@ git pull origin main
 
 ### Conceder acesso a colaboradores
 
-Acesse `github.com/sefindf/dashboard` → **Settings → Collaborators → Add people** e adicione o usuário GitHub do colaborador.
+Acesse `github.com/suop-df/dashboard` → **Settings → Collaborators → Add people** e adicione o usuário GitHub do colaborador.
 
 ---
 
@@ -302,4 +302,4 @@ Início (index.html)
 
 ---
 
-*SefinDF/SEEC — Secretaria Excutiva de Orçamento, Finanças e Planejamento*
+*suop-df/SEEC — Secretaria Excutiva de Orçamento, Finanças e Planejamento*

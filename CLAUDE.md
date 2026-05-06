@@ -8,9 +8,9 @@ Documento de contexto para o Claude Code. Leia este arquivo antes de qualquer in
 
 Dashboards interativos de execução orçamentária do Governo do Distrito Federal, publicados via **GitHub Pages** e alimentados por ETL automatizado a partir do banco Oracle.
 
-- **Organização GitHub:** SefinDF
+- **Organização GitHub:** suop-df
 - **Repositório:** dashboard
-- **URL pública:** https://sefindf.github.io/dashboard/
+- **URL pública:** https://suop-df.github.io/dashboard/
 - **Responsável técnico:** James (james.coelho) — ContDF/SEEC
 
 ---
@@ -119,7 +119,7 @@ Para não depender da instabilidade do cron do GitHub Actions (free tier), foi c
 ```powershell
 # D:\Actions-runner\disparar-etl.ps1
 $token    = "SEU_PAT_AQUI"
-$owner    = "SefinDF"
+$owner    = "suop-df"
 $repo     = "dashboard"
 $workflow = "etl.yml"
 $branch   = "main"

@@ -17,7 +17,7 @@ Permitir que múltiplos colaboradores trabalhem em paralelo no repositório, cad
 ### O que cada colaborador precisa
 1. Conta GitHub — james.coelho adiciona via `Settings → Collaborators`
 2. Git instalado na estação
-3. Clone do repositório: `git clone https://github.com/SefinDF/dashboard`
+3. Clone do repositório: `git clone https://github.com/suop-df/dashboard`
 4. Os `data/gz/*.json.gz` commitados servem como dados de desenvolvimento local
 
 ### Fluxo de trabalho
@@ -57,13 +57,13 @@ Em `Settings → Branches → Add rule` no GitHub:
 ## 📌 Pendente — Segundo Repositório: Dashboards Internos D-0
 
 ### Objetivo
-Criar um segundo repositório GitHub público (`SefinDF/relatorios`) para dashboards de uso interno com dados D-0 (Oracle em tempo real), atualizado várias vezes ao dia. O repositório existente (`dashboard`) não é alterado.
+Criar um segundo repositório GitHub público (`suop-df/relatorios`) para dashboards de uso interno com dados D-0 (Oracle em tempo real), atualizado várias vezes ao dia. O repositório existente (`dashboard`) não é alterado.
 
 ### Arquitetura
 
 ```
 Repo 1 (existente)                    Repo 2 (novo)
-SefinDF/dashboard                SefinDF/relatorios
+suop-df/dashboard                suop-df/relatorios
 ──────────────────────                ──────────────────────
 Oracle D-1 → etl.py                   Oracle D-0 → etl.py
 → data/gz/ → GitHub Pages             → data/gz/ → GitHub Pages
@@ -82,14 +82,14 @@ Runner: D:\Actions-runner\            Runner: D:\Actions-runner-interno\
 
 ### Implementação
 
-1. **Criar repo** `SefinDF/relatorios` no GitHub (público, GitHub Pages na `main`)
+1. **Criar repo** `suop-df/relatorios` no GitHub (público, GitHub Pages na `main`)
 2. **Configurar Secrets** no novo repo: `DB_USER`, `DB_PASSWORD`, `DB_DSN`, `ORACLE_CLIENT_PATH`, `SUPABASE_URL`, `SUPABASE_KEY`, `PAT_TOKEN`
 3. **Instalar segundo runner** na mesma máquina:
    ```powershell
    mkdir D:\Actions-runner-interno
    cd D:\Actions-runner-interno
    # Baixar mesma versão do runner existente
-   .\config.cmd --url https://github.com/SefinDF/relatorios --token <TOKEN>
+   .\config.cmd --url https://github.com/suop-df/relatorios --token <TOKEN>
    .\svc.cmd install GitHubActionsRunnerInterno
    .\svc.cmd start GitHubActionsRunnerInterno
    ```
