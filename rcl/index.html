@@ -230,17 +230,10 @@ function getColumnsForBimestre(b) {
   return cols;
 }
 
-// Colunas ativas: janela_padrao quando sem filtro; união das janelas selecionadas se houver filtro
+// Colunas ativas: janela_padrao quando sem filtro; 12 meses até o fim do maior bimestre selecionado
 function getActiveCols() {
   if (activeBimestres.size === 0) return D.janela_padrao || D.colunas;
-  const colSet = new Set();
-  activeBimestres.forEach(function(b) {
-    getColumnsForBimestre(b).forEach(function(c) { colSet.add(c); });
-  });
-  return Array.from(colSet).sort(function(a, b) {
-    var pa = a.split(',').map(Number), pb = b.split(',').map(Number);
-    return pa[1] !== pb[1] ? pa[1] - pb[1] : pa[0] - pb[0];
-  });
+  return getColumnsForBimestre(Math.max.apply(null, Array.from(activeBimestres)));
 }
 
 // Soma de uma linha para as colunas ativas
