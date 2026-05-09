@@ -211,10 +211,10 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
 let D;
 
 // ═══════════════════════════════════════════════════════════════
-// BIMESTRE — estado do seletor
+// BIMESTRE — estado do seletor (múltipla seleção)
 // ═══════════════════════════════════════════════════════════════
-let activeBimestre = null;   // null = sem filtro (padrão 12 meses)
-let colToRotulo    = {};     // mapa "m,ano" → rótulo legível
+let activeBimestres = new Set(); // vazio = sem filtro (padrão 12 meses)
+let colToRotulo     = {};        // mapa "m,ano" → rótulo legível
 
 // Retorna os 12 meses (como chave "m,ano") que terminam no último mês do bimestre B
 function getColumnsForBimestre(b) {
@@ -230,10 +230,17 @@ function getColumnsForBimestre(b) {
   return cols;
 }
 
-// Colunas ativas: janela_padrao quando sem filtro, ou janela do bimestre
+// Colunas ativas: janela_padrao quando sem filtro; união das janelas selecionadas se houver filtro
 function getActiveCols() {
-  if (activeBimestre === null) return D.janela_padrao || D.colunas;
-  return getColumnsForBimestre(activeBimestre);
+  if (activeBimestres.size === 0) return D.janela_padrao || D.colunas;
+  const colSet = new Set();
+  activeBimestres.forEach(function(b) {
+    getColumnsForBimestre(b).forEach(function(c) { colSet.add(c); });
+  });
+  return Array.from(colSet).sort(function(a, b) {
+    var pa = a.split(',').map(Number), pb = b.split(',').map(Number);
+    return pa[1] !== pb[1] ? pa[1] - pb[1] : pa[0] - pb[0];
+  });
 }
 
 // Soma de uma linha para as colunas ativas
@@ -246,32 +253,26 @@ function setupBimestreBar() {
   const refMes = D.ref_mes || 0;
   for (let b = 1; b <= 6; b++) {
     var btn = document.getElementById('bim-' + b);
-    var lastMonth = b * 2;
-    if (lastMonth <= refMes) {
-      btn.disabled = false;
-    } else {
-      btn.disabled = true;
-    }
+    btn.disabled = (b * 2) > refMes;
   }
 }
 
-function onBimestreSelect(b) {
-  if (activeBimestre === b) { onBimestreClear(); return; }
-  activeBimestre = b;
-  // Atualiza aparência dos botões
+function updateBimestreUI() {
   for (let i = 1; i <= 6; i++) {
-    document.getElementById('bim-' + i).classList.toggle('active', i === b);
+    document.getElementById('bim-' + i).classList.toggle('active', activeBimestres.has(i));
   }
-  document.getElementById('bim-clear').style.display = '';
+  document.getElementById('bim-clear').style.display = activeBimestres.size > 0 ? '' : 'none';
+}
+
+function onBimestreSelect(b) {
+  if (activeBimestres.has(b)) { activeBimestres.delete(b); } else { activeBimestres.add(b); }
+  updateBimestreUI();
   refresh();
 }
 
 function onBimestreClear() {
-  activeBimestre = null;
-  for (let i = 1; i <= 6; i++) {
-    document.getElementById('bim-' + i).classList.remove('active');
-  }
-  document.getElementById('bim-clear').style.display = 'none';
+  activeBimestres.clear();
+  updateBimestreUI();
   refresh();
 }
 
@@ -339,7 +340,10 @@ function updatePeriodBadge(cols){
   var r0 = colToRotulo[cols[0]] || cols[0];
   var rN = colToRotulo[cols[cols.length-1]] || cols[cols.length-1];
   var badge = r0 + ' a ' + rN;
-  if(activeBimestre !== null) badge = activeBimestre + 'º Bimestre · ' + badge;
+  if(activeBimestres.size > 0) {
+    var bimLabel = Array.from(activeBimestres).sort().map(function(b){ return b + 'º Bim'; }).join(' + ');
+    badge = bimLabel + ' · ' + badge;
+  }
   document.getElementById('period-badge').textContent = badge;
 }
 
@@ -353,7 +357,7 @@ function renderKPIs(cols){
   const recCorr = sumLinha('receitas_correntes', cols);
   const ded     = sumLinha('deducoes', cols);
   const pct     = prev > 0 ? (rcl12 / prev * 100) : 0;
-  const lbl12   = activeBimestre !== null ? '12m até ' + colToRotulo[cols[cols.length-1]] : '12 meses';
+  const lbl12   = activeBimestres.size > 0 ? '12m até ' + colToRotulo[cols[cols.length-1]] : '12 meses';
 
   document.getElementById('kpi-1-value').textContent = fmtBi(rcl12);
   document.getElementById('kpi-1-sub').textContent = 'Rec. Correntes: ' + fmtBi(recCorr) + ' | Deduções: ' + fmtBi(ded);
@@ -471,8 +475,8 @@ function renderCharts(cols){
 // ═══════════════════════════════════════════════════════════════
 function renderTable(cols){
   const labels = cols.map(function(c){ return colToRotulo[c] || c; });
-  const lbl12  = activeBimestre !== null
-    ? 'TOTAL 12M<br>' + colToRotulo[cols[cols.length-1]]
+  const lbl12  = activeBimestres.size > 0
+    ? 'TOTAL<br>' + colToRotulo[cols[cols.length-1]]
     : 'TOTAL<br>12 MESES';
 
   // Build header
