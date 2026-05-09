@@ -18,7 +18,7 @@ Oracle (ORAPRD06)
                    (browser busca gz; se falhar, busca Supabase automaticamente)
 ```
 
-O ETL roda automaticamente todo dia às **06:00 (horário de Brasília)** via GitHub Actions com runner self-hosted instalado na estação de trabalho do James (james.coelho).
+O ETL roda automaticamente todo dia às **06:00 (horário de Brasília)** via GitHub Actions com runner self-hosted instalado na estação de trabalho da equipe.
 
 ---
 
@@ -72,21 +72,22 @@ fetchJsonGz('../data/gz/receita.json.gz')
 │   ├── gz/                             # Arquivos comprimidos (commitados)
 │   │   ├── despesa.json.gz
 │   │   ├── receita.json.gz
-│   │   ├── rcl.json.gz                 # Estrutura D pré-agregada (gerada por build_rcl_data)
-│   │   └── saldo_funcao_subfuncao.json.gz
-│   └── queries/                        # SQLs das extrações
-│       ├── DESPESA.sql
-│       ├── RECEITA.sql
-│       ├── receita_RCL.sql             # SQL da RCL (retorna linhas brutas por conta)
-│       └── saldocontabil_funcao_subfuncao.sql
+│   │   ├── rcl.json.gz                 # Estrutura pré-agregada (gerada por build_rcl_data)
+│   │   └── restos_a_pagar.json.gz
+│   ├── queries/                        # SQLs das extrações
+│   │   ├── DESPESA.sql
+│   │   ├── RECEITA.sql
+│   │   ├── receita_RCL.sql             # SQL da RCL (retorna linhas brutas por conta)
+│   │   └── restos_a_pagar.sql
+│   └── UFIS-FCDFDespesadePessoal.xlsx  # Planilha FCDF (não versionada)
 ├── balanco_orcamentario/
 │   ├── index.html                      # Menu: Receita e Despesa
 │   ├── receita_orcamentaria.html       # Dashboard de Receita
 │   └── despesa_orcamentaria.html       # Dashboard de Despesa
-├── funcao-subfuncao/
-│   └── index.html                      # Dashboard Função e Subfunção
 ├── rcl/
 │   └── index.html                      # Dashboard Receita Corrente Líquida (RREO)
+├── restos_a_pagar/
+│   └── index.html                      # Dashboard Restos a Pagar
 └── tools/
     └── Brasão_do_Distrito_Federal_Brasil.png
 ```
@@ -119,6 +120,7 @@ ORACLE_CLIENT_PATH=          # deixe vazio para thin mode
 DB_MIN_CONNECTIONS=1
 DB_MAX_CONNECTIONS=5
 DB_INCREMENT_CONNECTIONS=1
+FCDF_PATH=                   # caminho da planilha FCDF (opcional)
 ```
 
 ### 4. Executar o ETL manualmente
@@ -133,7 +135,7 @@ Os arquivos `.json.gz` serão gerados em `data/gz/`.
 
 ## GitHub Actions — Runner self-hosted
 
-O workflow `etl.yml` roda no servidor do GDF via runner self-hosted instalado em `D:\Actions-runner` na estação de trabalho do James (james.coelho). A suspensão da máquina está desativada (Configurações de Energia) e o runner é iniciado automaticamente via **Agendador de Tarefas do Windows** a cada inicialização.
+O workflow `etl.yml` roda no servidor do GDF via runner self-hosted instalado em `D:\Actions-runner`. A suspensão da máquina está desativada (Configurações de Energia) e o runner é iniciado automaticamente via **Agendador de Tarefas do Windows** a cada inicialização.
 
 ### Registrar o runner
 
@@ -185,6 +187,7 @@ Configure em Settings → Secrets → Actions:
 | `DB_MIN_CONNECTIONS` | Mínimo de conexões no pool |
 | `DB_MAX_CONNECTIONS` | Máximo de conexões no pool |
 | `DB_INCREMENT_CONNECTIONS` | Incremento do pool |
+| `FCDF_PATH` | Caminho da planilha FCDF (Despesa de Pessoal UFIS/SIAFE) |
 | `SUPABASE_URL` | URL do projeto Supabase |
 | `SUPABASE_KEY` | Chave anon/service do Supabase |
 
@@ -293,13 +296,13 @@ git push origin main --force
 
 ```
 Início (index.html)
-├── Balanço Orçamentário  →  balanco_orcamentario/index.html
+├── Balanço Orçamentário       →  balanco_orcamentario/index.html
 │   ├── Receita Orçamentária
 │   └── Despesa Orçamentária
-├── Função e Subfunção    →  funcao-subfuncao/index.html
-└── Receita Corrente Líquida  →  rcl/index.html
+├── Receita Corrente Líquida   →  rcl/index.html
+└── Restos a Pagar             →  restos_a_pagar/index.html
 ```
 
 ---
 
-*suop-df/SEEC — Secretaria Excutiva de Orçamento, Finanças e Planejamento*
+*suop-df/SEEC — Secretaria Executiva de Orçamento, Finanças e Planejamento*
