@@ -1,0 +1,137 @@
+REGRAS GERAIS:
+
+De acordo com o percentual que aparecer na linha, o valor da coluna deverá ser multiplicado por 
+esse percentual:
+
+Exemplo: 
+
+ICMS (75%): multiplica por 0,75
+ICMS (25%): multiplica por 0,25
+IPVA (50%): multiplica por 0,50
+
+Nos cinco primeiros bimestres do exercício, o acompanhamento será feito com base na despesa liquidada. No último bimestre do exercício, o valor deverá corresponder ao total da despesa empenhada.
+Por exemplo:
+
+
+QUADRO: RECEITAS RESULTANTES DE IMPOSTOS E TRANSFERÊNCIAS CONSTITUCIONAIS E LEGAIS
+==================================================================================
+
+REGRAS PARA AS COLUNAS
+----------------------
+PREVISÃO INICIAL: COCONTACONTABIL IN (521110000),  SUM(VADEBITO-VACREDITO)
+PREVISÃO ATUALIZADA (a): COCONTACONTABIL IN  (521110000,521210100,5212102002), SUM(VADEBITO-VACREDITO)
+RECEITAS REALIZADAS: Até o Bimestre (b): COCONTACONTABIL IN (621200000,621300000) E SUBSTR(COCONTACORRENTE,1,3) <> 175, SUM(VACREDITO-VADEBITO)
+% (b/a) x 100: resultado da fórmula (b/a) em percentual
+
+REGRA PARA LINHAS 
+-----------------
+COMPETÊNCIA TRIBUTARIA ESTADUAL (I): Somatório  
+	RECEITA DE IMPOSTOS: Somatório
+		Receita Resultante do ICMS (75%): somatório
+			ICMS (75%): SUBSTR(COCONTACORRENTE,1,8) IN (11145011)
+			Multas, Juros de Mora, Divida Ativa e Outros Encargos do ICMS (75%): SUBSTR(COCONTACORRENTE,1,8) ENTRE 11145013 E 11145018
+		Adicional de até 2% do ICMS destinado ao Fundo de Combate à Pobreza (ADCT, art. 82, §1º) (75%): SUBSTR(COCONTACORRENTE,1,8) ENTRE 11145021 E 11145026
+		Receita Resultante do Imposto de Transmissão Causa Mortis e Doação de Bens e Direitos – ITCD: Somatório
+			ITCD: SUBSTR(COCONTACORRENTE,1,8) IN (11125201)
+			Multas, Juros de Mora, Dívida Ativa e Outros Encargos do ITCD: SUBSTR(COCONTACORRENTE,1,8) ENTRE 11125203 e 11125208
+		Receita Resultante do Imposto sobre a Propriedade de Veículos Automotores – IPVA (50%)
+			IPVA (50%): SUBSTR(COCONTACORRENTE,1,8) IN (11125101)
+			Multas, Juros de Mora, Dívida Ativa e Outros Encargos do IPVA (50%): SUBSTR(COCONTACORRENTE,1,8) ENTRE 11125103 e 11125108
+		Receita Resultante do Imposto sobre a Renda e Proventos de Qualquer Natureza Retido na Fonte – IRRF: SUBSTR(COCONTACORRENTE,1,8) ENTRE 11130201 e 11130341
+RECEITA DE TRANSFERÊNCIAS CONSTITUCIONAIS E LEGAIS: Somatório
+	Cota-Parte FPE: SUBSTR(COCONTACORRENTE,1,8) IN (17115001)
+	Cota-Parte IPI-Exportação (75%): SUBSTR(COCONTACORRENTE,1,8) IN (17115301)
+	Outras Transf. ou Compensações Financeiras Provenientes de Impostos e Transf. Constitucionais (75%): SUBSTR(COCONTACORRENTE,1,8) IN (17196201)
+COMPETÊNCIA TRIBUTARIA MUNICIPAL (II): Somatório
+	RECEITA DE IMPOSTOS: Somatório
+		Receita Resultante do ICMS (25%): Somatório
+			ICMS (25%):  SUBSTR(COCONTACORRENTE,1,8) IN (11145011)
+			Multas, Juros de Mora, Divida Ativa e Outros Encargos do ICMS (25%): SUBSTR(COCONTACORRENTE,1,8) ENTRE 11145013 E 11145018
+		Adicional de até 2% do ICMS destinado ao Fundo de Combate à Pobreza (ADCT, art. 82, §1º) (25%): SUBSTR(COCONTACORRENTE,1,8) ENTRE 11145021 E 11145026
+		Receita Resultante do Imposto sobre a Propriedade de Veículos Automotores – IPVA (50%): Somatório
+			IPVA (50%):  SUBSTR(COCONTACORRENTE,1,8) IN (11125101)
+			Multas, Juros de Mora, Dívida Ativa e Outros Encargos do IPVA (50%):  SUBSTR(COCONTACORRENTE,1,8) ENTRE 11125103 e 11125108
+		Receita Resultante do Imposto Predial e Territorial Urbano - IPTU: Somatório
+			IPTU: SUBSTR(COCONTACORRENTE,1,8) IN (11125001)
+			Multas, Juros de Mora, Divida Ativa e Outros Encargos do IPTU: SUBSTR(COCONTACORRENTE,1,8) ENTRE 11125003 e 11125008
+		Receita Resultante do Imposto sobre Transmissão Inter Vivos - ITBI: Somatório
+			ITBI: SUBSTR(COCONTACORRENTE,1,8) IN (11125301)
+			Multas, Juros de Mora, Dívida Ativa e Outros Encargos do ITBI: SUBSTR(COCONTACORRENTE,1,8) ENTRE 11125303 e 11125308
+		Receita Resultante do Imposto sobre Serviços de Qualquer Natureza - ISS: Somatório
+			ISS: SUBSTR(COCONTACORRENTE,1,8) IN (11145111)
+			Multas, Juros de Mora, Dívida Ativa e Outros Encargos do ISS: SUBSTR(COCONTACORRENTE,1,8) ENTRE 11145113 e 11145118
+RECEITA DE TRANSFERÊNCIAS CONSTITUCIONAIS E LEGAIS: Somatório
+	Cota-Parte FPM: SUBSTR(COCONTACORRENTE,1,8) IN (17115111)
+	Cota-Parte ITR: SUBSTR(COCONTACORRENTE,1,8) IN (17115201)
+	Cota-Parte IPI-Exportação (25%): SUBSTR(COCONTACORRENTE,1,8) IN (17115301)
+	Outras Transferências ou Compensações Financeiras Provenientes de Impostos e Transf. Constitucionais (25%): SUBSTR(COCONTACORRENTE,1,8) IN (17196201)
+TOTAL DAS RECEITAS RESULTANTES DE IMPOSTOS E TRANFERÊNCIAS CONSTITUCIONAIS E LEGAIS - (III) = (I) + (II): Resultado da fórmula (I) + (II)
+
+QUADRO: DESPESAS COM AÇÕES E SERVIÇOS PÚBLICOS DE SAÚDE (ASPS) – POR SUBFUNÇÃO E CATEGORIA ECONÔMICA
+===================================================================================================
+
+REGRA PARA AS COLUNAS:
+---------------------
+DOTAÇÃO INICIAL: SUBSTR(COCONTACONTABIL,1,5) IN (52211)
+DOTAÇÃO ATUALIZADA (c):   SUBSTR(COCONTACONTABIL,1,5) IN (52211,52212,52215,52219), SUM(VADEBITO-VACREDITO) 
+DESPESAS EMPENHADAS Até o bimestre (d): SUBSTR (COCONTACONTABIL,1,5) IN (62213), SUM(VACREDITO-VADEBITO)
+DESPESAS LIQUIDADAS Até o bimestre (e): SUBSTR (COCONTACONTABIL,1,7) IN (6221303,6221304,6221307), SUM(VACREDITO-VADEBITO)
+DESPESAS PAGAS Até o bimestre (e):  SUBSTR(COCONTACONTABIL,1,7) IN (6221304), SUM(VACREDITO-VADEBITO)
+INSCRITAS EM RPNP (g): Se (INMES = 12) então INSCRITAS EM RPNP (g) = [DESPESAS EMPENHADAS Até o bimestre (d)] - [DESPESAS LIQUIDADA Até o bimestre (e)]; Se (INMES ≠ 12), então INSCRITAS EM RPNP (g) = 0
+
+
+REGRA PARA AS LINHAS:
+--------------------
+ATENÇÃO BÁSICA (IV): somatório
+	Despesas Correntes: COFUNCAO=10  AND COSUBFUNCAO=301 AND SUBSTR(CONATUREZA,2,1) IN (1,3)  
+	Despesas de Capital: COFUNCAO=10  AND COSUBFUNCAO=301 AND SUBSTR(CONATUREZA,2,1) IN (4,6)
+ASSISTÊNCIA HOSPITALAR E AMBULATORIAL (V): somatório
+	Despesas Correntes: COFUNCAO=10  AND COSUBFUNCAO=302 AND SSUBSTR(CONATUREZA,2,1) IN (1,3)  
+	Despesas de Capital: COFUNCAO=10  AND COSUBFUNCAO=302 AND SUBSTR(CONATUREZA,2,1) IN (4,6)
+SUPORTE PROFILÁTICO E TERAPÊUTICO (VI): somatório
+	Despesas Correntes: COFUNCAO=10  AND COSUBFUNCAO=303 AND SUBSTR(CONATUREZA,2,1) IN (1,3)  
+	Despesas de Capital: COFUNCAO=10  AND COSUBFUNCAO=303 AND SUBSTR(CONATUREZA,2,1) IN (4,6)
+VIGILÂNCIA SANITÁRIA (VII)
+	Despesas Correntes: COFUNCAO=10  AND COSUBFUNCAO=304 AND SUBSTR(CONATUREZA,2,1) IN (1,3)
+	Despesas de Capital: COFUNCAO=10  AND COSUBFUNCAO=304 AND SUBSTR(CONATUREZA,2,1) IN (4,6)
+VIGILÂNCIA EPIDEMIOLÓGICA (VIII): somatório
+	Despesas Correntes: COFUNCAO=10  AND COSUBFUNCAO=305 AND SUBSTR(CONATUREZA,2,1) IN (1,3)
+	Despesas de Capital: COFUNCAO=10  AND COSUBFUNCAO=305 AND SUBSTR(CONATUREZA,2,1) IN (4,6)
+
+ALIMENTAÇÃO E NUTRIÇÃO (IX): somatório
+	Despesas Correntes: COFUNCAO=10  AND COSUBFUNCAO=306 AND SUBSTR(CONATUREZA,2,1) IN (1,3)
+	Despesas de Capital: COFUNCAO=10  AND COSUBFUNCAO=306 AND SUBSTR(CONATUREZA,2,1) IN (4,6)
+OUTRAS SUBFUNÇÕES (X): somatório
+	Despesas Correntes: COFUNCAO=10  AND COSUBFUNCAO IN (122,126,128,364) AND SUBSTR(CONATUREZA,2,1) IN (1,3)           	                            
+	Despesas de Capital: COFUNCAO=10  AND COSUBFUNCAO IN (122,126,128,364) AND SUBSTR(CONATUREZA,2,1) IN (4,6)
+TOTAL (XI) = (IV + V + VI + VII + VIII + IX + X): resultado da fórmula (IV + V + VI + VII + VIII + IX + X)
+
+
+QUADRO APURAÇÃO DO CUMPRIMENTO DO LIMITE MÍNIMO PARA APLICAÇÃO EM ASPS
+======================================================================
+
+Total das Despesas com ASPS (XII) = (XI): Total das colunas DESPESAS EMPENHADAS, DESPESAS LIQUIDADAS, DESPESAS PAGAS
+(-) Restos a Pagar Não Processados Inscritos Indevidamente no Exercício sem Disponibilidade Financeira (XIII):
+(-) Despesas Custeadas com Recursos Vinculados à Parcela do Percentual Mínimo que não foi Aplicada em ASPS em Exercícios Anteriores (XIV):
+(-) Despesas Custeadas com Disponibilidade de Caixa Vinculada aos Restos a Pagar Cancelados (XV):
+(=) VALOR APLICADO EM ASPS (XVI) = (XII - XIII - XIV - XV): resultado da fórmula (XII - XIII - XIV - XV)
+Despesa Mínima a ser Aplicada em ASPS (XVII) = (I) x 12% + (II) x 15% (LC 141/2012): resultado da fórmula (I) x 12% + (II) x 15%
+Despesa Mínima a ser Aplicada em ASPS (XVII) = (III) x % (Lei Orgânica do DF): não preencher
+Diferença entre o Valor Aplicado e a Despesa Mínima a ser Aplicada (XVIII) = (XVI (d ou e) - XVII): resultado da fórmula [XVI (d ou e) - XVII] - nos cinco primeiros bimestres do exercício, o acompanhamento será feito com base na despesa 												   liquidada (e). No último bimestre do exercício, o valor deverá corresponder ao total da despesa empenhada (d)
+Limite não Cumprido (XIX) = (XVIII) (Quando valor for inferior a zero): se XVIII <  0, então XIX = XVIII;  XVIII >=  0, não preencher (sem valor)
+PERCENTUAL DA RECEITA DE IMPOSTOS E TRANSFERÊNCIAS CONSTITUCIONAIS E LEGAIS APLICADO EM ASPS (XVI / III)*100 (mínimo de 12% ou de 15%, dependendo da competência
+tributária, conforme LC n° 141/2012 ou % da Lei Orgânica do DF): resultado da fórmula (XVI / III)*100 onde III aqui é total de RECEITAS REALIZADAS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
