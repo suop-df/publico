@@ -239,7 +239,11 @@ def load_fcdf_data(base_dir):
         log.error("openpyxl nao instalado. Execute: pip install openpyxl")
         return {"realizados": {}, "previsao": {}}
     from collections import defaultdict
-    wb = load_workbook(path, read_only=True)
+    try:
+        wb = load_workbook(path, read_only=True)
+    except Exception as e:
+        log.warning(f"Planilha FCDF nao pode ser lida ({path}): {e}")
+        return {"realizados": {}, "previsao": {}}
     ws = wb.active
     realizados = defaultdict(lambda: {"total": 0.0, "pessoal": 0.0})
     previsao   = defaultdict(lambda: {"total": 0.0, "pessoal": 0.0})
