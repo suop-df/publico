@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mínimo de Saúde (ASPS) — GDF 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1e293b;min-height:100vh}
+:root{
+  --radius:12px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.1);
+  --accent-900:#1b5e20;--accent-700:#006633;
+  --accent-500:#43a047;--accent-200:#c8e6c9;--accent-100:#e8f5e9;--accent-50:#f1f8e9;
+  --gradient:linear-gradient(135deg,#1b5e20 0%,#006633 40%,#2e7d32 100%);
+  --green-600:#16a34a;--green-100:#dcfce7;--green-900:#14532d;
+  --red-600:#dc2626;--red-100:#fee2e2;--red-900:#991b1b;
+  --yellow-600:#d97706;--yellow-100:#fef3c7;--yellow-900:#78350f;
+}
+
+/* ═══ HEADER ═══ */
+.header{background:var(--gradient);color:#fff;padding:16px 28px;display:flex;align-items:center;gap:20px;box-shadow:var(--shadow-lg)}
+.header img{height:52px;flex-shrink:0}
+.header-titles{flex:1}
+.header-titles h1{font-size:1rem;font-weight:700;letter-spacing:.3px;line-height:1.3}
+.header-titles .subtitle{font-size:.75rem;opacity:.75;font-weight:400;margin-top:2px}
+.data-atualizacao{font-size:.7rem;opacity:.75;margin-top:4px;font-weight:400}
+.btn-voltar{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
+.btn-voltar:hover{background:rgba(255,255,255,.25)}
+
+/* ═══ CONTENT ═══ */
+.content{padding:20px 28px 40px}
+
+/* ═══ SELETOR BIMESTRE ═══ */
+.bim-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.bim-btn{font-family:inherit;font-size:.72rem;font-weight:600;padding:7px 14px;border-radius:8px;border:2px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;transition:all .15s;white-space:nowrap}
+.bim-btn:hover{border-color:var(--accent-500);color:var(--accent-700)}
+.bim-btn.active{border-color:var(--accent-700);background:var(--accent-700);color:#fff}
+.bim-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ═══ KPI CARDS ═══ */
+.kpi-row{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.kpi-card{background:#fff;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);border-left:4px solid #cbd5e1;transition:box-shadow .2s,transform .2s;flex:1;min-width:180px}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-card.cumprido{border-left-color:var(--green-600)}
+.kpi-card.abaixo{border-left-color:var(--red-600)}
+.kpi-card.neutral{border-left-color:#cbd5e1}
+.kpi-card.surplus{border-left-color:var(--green-600)}
+.kpi-card.deficit{border-left-color:var(--red-600)}
+.kpi-card.destaque{border:2px solid var(--green-600);background:var(--green-100)}
+.kpi-card.destaque.abaixo{border-color:var(--red-600);background:var(--red-100)}
+.kpi-label{font-size:.67rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.kpi-card.destaque .kpi-label{color:var(--green-900)}
+.kpi-card.destaque.abaixo .kpi-label{color:var(--red-900)}
+.kpi-value{font-size:1.25rem;font-weight:800;line-height:1.1;margin-bottom:4px;color:#1e293b}
+.kpi-card.cumprido .kpi-value,.kpi-card.surplus .kpi-value{color:var(--green-600)}
+.kpi-card.abaixo .kpi-value,.kpi-card.deficit .kpi-value{color:var(--red-600)}
+.kpi-card.destaque .kpi-value{font-size:1.7rem;color:var(--green-900)}
+.kpi-card.destaque.abaixo .kpi-value{color:var(--red-900)}
+.kpi-badge{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 10px;border-radius:4px;margin-bottom:4px}
+.kpi-badge.ok{background:var(--green-600);color:#fff}
+.kpi-badge.nok{background:var(--red-600);color:#fff}
+.kpi-sub{font-size:.65rem;color:#64748b;font-weight:500;margin-top:3px}
+.kpi-ref{font-size:.65rem;font-weight:600;color:#64748b;margin-top:2px}
+.kpi-card.destaque .kpi-ref{color:var(--green-900)}
+.kpi-card.destaque.abaixo .kpi-ref{color:var(--red-900)}
+
+/* ═══ TABLE ═══ */
+.table-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:20px}
+.table-panel-header{padding:12px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
+.table-panel-header h3{font-size:.82rem;font-weight:700;color:var(--accent-900)}
+.table-panel-header .badge-bim{font-size:.65rem;font-weight:600;color:var(--accent-700);background:var(--accent-100);border:1px solid var(--accent-200);border-radius:4px;padding:2px 8px}
+.table-wrap{overflow-x:auto}
+table.dem{width:100%;border-collapse:collapse;font-size:.72rem}
+table.dem th{background:var(--accent-50);color:var(--accent-900);text-align:center;padding:7px 6px;border-bottom:2px solid var(--accent-200);font-size:.63rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+table.dem th.left{text-align:left;padding-left:10px}
+table.dem td{padding:4px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap}
+table.dem td.name{text-align:left;white-space:normal;min-width:280px;max-width:480px;padding-left:10px}
+table.dem td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dem td.center{text-align:center;font-variant-numeric:tabular-nums}
+table.dem td.pct{text-align:right;font-variant-numeric:tabular-nums;color:#475569}
+table.dem td.total{text-align:right;font-variant-numeric:tabular-nums;background:#f8fafc;font-weight:700}
+table.dem td.total.center{text-align:center}
+table.dem td.dest{text-align:right;font-variant-numeric:tabular-nums;background:#e9d5ff;font-weight:700}
+tr.n0 td{background:var(--accent-100);font-weight:700;font-size:.74rem;color:var(--accent-900)}
+tr.n1 td{background:var(--accent-50);font-weight:600;font-size:.72rem}
+tr.n2 td{font-weight:500}
+tr.n3 td{font-weight:400;color:#475569}
+tr.res td{font-weight:800;font-size:.76rem}
+tr.res.ok td{background:var(--green-100);color:var(--green-900)}
+tr.res.nok td{background:var(--red-100);color:var(--red-900)}
+tr.res.neutral td{background:#f8fafc;color:#475569}
+tr.pct-row td{background:#faf5ff;font-weight:800;font-size:.8rem}
+tr.pct-row.ok td{background:var(--green-100);color:var(--green-900)}
+tr.pct-row.nok td{background:var(--red-100);color:var(--red-900)}
+tr.sep td{height:4px;background:#f1f5f9;padding:0;border:none}
+tr:not(.sep):not(.res):not(.pct-row):hover td{background:color-mix(in srgb,var(--accent-100) 35%,transparent)!important}
+.ind1{padding-left:20px!important}.ind2{padding-left:36px!important}.ind3{padding-left:52px!important}
+
+/* ═══ AVISO ULTIMO BIMESTRE ═══ */
+.aviso-bim6{background:var(--yellow-100);border:1px solid #fde68a;border-radius:8px;padding:8px 14px;margin-bottom:16px;font-size:.72rem;font-weight:600;color:var(--yellow-900);display:none}
+
+/* ═══ FOOTER ═══ */
+.footer{text-align:center;padding:14px 28px;font-size:.67rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6}
+
+@media(max-width:900px){.kpi-row{flex-wrap:wrap}.kpi-card{min-width:calc(50% - 7px)}}
+@media(max-width:600px){.kpi-card{min-width:100%}.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}}
+@media print{.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}.kpi-card,.table-panel{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOADING ══ -->
+<div id="loading-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:sans-serif;font-size:1rem;color:#555;flex-direction:column;gap:12px">
+  <div style="font-size:2rem">&#9203;</div>
+  <div>Carregando dados&#8230;</div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <img id="brasao" alt="Bras&#227;o do DF">
+  <div class="header-titles">
+    <h1>DISTRITO FEDERAL &middot; RREO &middot; M&#205;NIMO DE SA&#218;DE &#8212; ASPS</h1>
+    <div class="subtitle">A&#231;&#245;es e Servi&#231;os P&#250;blicos de Sa&#250;de &middot; LC 141/2012 &middot; SEEC/SEFIN - Secretaria Executiva de Finan&#231;as, Or&#231;amento e Planejamento</div>
+    <p class="data-atualizacao" id="data-atualizacao">Carregando dados&#8230;</p>
+  </div>
+  <a href="../" class="btn-voltar">&#8592; Voltar</a>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Seletor de bimestre -->
+  <div class="bim-bar" id="bim-bar"></div>
+
+  <!-- Aviso 6º bimestre -->
+  <div class="aviso-bim6" id="aviso-bim6">
+    &#9888; 6&#186; Bimestre: conforme LC 141/2012, o acompanhamento &#233; feito com base na <strong>despesa empenhada</strong>.
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-row">
+    <div class="kpi-card destaque" id="kpi-pct" style="flex:1.4;min-width:220px">
+      <div class="kpi-label">% Aplicado em ASPS (XVI / III)</div>
+      <div class="kpi-value" id="kv-pct">&#8212;</div>
+      <span class="kpi-badge" id="kb-pct">&nbsp;</span>
+      <div class="kpi-ref" id="kref-pct">M&#237;nimo exigido: &#8212;</div>
+    </div>
+    <div class="kpi-card neutral" id="kpi-xvi">
+      <div class="kpi-label">Valor Aplicado em ASPS (XVI)</div>
+      <div class="kpi-value" id="kv-xvi">&#8212;</div>
+      <div class="kpi-sub" id="ksub-xvi">Acumulado at&#233; o bimestre</div>
+    </div>
+    <div class="kpi-card neutral" id="kpi-xvii">
+      <div class="kpi-label">M&#237;nimo Exigido (XVII)</div>
+      <div class="kpi-value" id="kv-xvii">&#8212;</div>
+      <div class="kpi-sub">(I) &times; 12% + (II) &times; 15% &mdash; LC 141/2012</div>
+    </div>
+    <div class="kpi-card neutral" id="kpi-xviii">
+      <div class="kpi-label">Diferen&#231;a (XVIII)</div>
+      <div class="kpi-value" id="kv-xviii">&#8212;</div>
+      <div class="kpi-sub">XVI &#8722; XVII (positivo = meta cumprida)</div>
+    </div>
+  </div>
+
+  <!-- Tabela 1: Receitas -->
+  <div class="table-panel">
+    <div class="table-panel-header">
+      <h3>Receitas Resultantes de Impostos e Transfer&#234;ncias Constitucionais e Legais</h3>
+      <span class="badge-bim" id="badge-bim1">&#8212;</span>
+    </div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:340px">Especifica&#231;&#227;o</th>
+            <th style="min-width:140px">Prev. Inicial (R$)</th>
+            <th style="min-width:140px">Prev. Atualizada (a) (R$)</th>
+            <th style="min-width:140px">Receitas Realizadas (b) (R$)</th>
+            <th style="min-width:80px">% (b/a)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-receitas"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabela 2: Despesas ASPS -->
+  <div class="table-panel">
+    <div class="table-panel-header">
+      <h3>Despesas com A&#231;&#245;es e Servi&#231;os P&#250;blicos de Sa&#250;de (ASPS) &#8212; por Subfun&#231;&#227;o e Categoria Econ&#244;mica</h3>
+      <span class="badge-bim" id="badge-bim2">&#8212;</span>
+    </div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:320px">Especifica&#231;&#227;o</th>
+            <th style="min-width:120px">Dota&#231;&#227;o Inicial (R$)</th>
+            <th style="min-width:120px">Dota&#231;&#227;o Atualizada (c) (R$)</th>
+            <th style="min-width:120px">Desp. Empenhadas (d) (R$)</th>
+            <th style="min-width:120px">Desp. Liquidadas (e) (R$)</th>
+            <th style="min-width:120px">Desp. Pagas (R$)</th>
+            <th style="min-width:110px">Inscritas em RPNP (g) (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-despesas"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tabela 3: Apuração -->
+  <div class="table-panel">
+    <div class="table-panel-header">
+      <h3>Apura&#231;&#227;o do Cumprimento do Limite M&#237;nimo para Aplica&#231;&#227;o em ASPS</h3>
+      <span class="badge-bim" id="badge-bim3">&#8212;</span>
+    </div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:480px">Especifica&#231;&#227;o</th>
+            <th style="min-width:140px">Empenhadas (d) (R$)</th>
+            <th style="min-width:140px">Liquidadas (e) (R$)</th>
+            <th style="min-width:140px">Pagas (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-apuracao"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  FONTE: SIAC &mdash; Sistema Integrado de Administra&#231;&#227;o Financeira e Cont&#225;bil<br>
+  Unidade de Informa&#231;&#245;es Fiscais / Contadoria Geral do DF / SEFIN / SEEC
+</div>
+
+<script>
+var D;
+var BIM_LABELS={
+  1:'1º Bimestre (jan–fev)',
+  2:'2º Bimestre (jan–abr)',
+  3:'3º Bimestre (jan–jun)',
+  4:'4º Bimestre (jan–ago)',
+  5:'5º Bimestre (jan–out)',
+  6:'6º Bimestre (jan–dez)',
+};
+var BIM_SHORT={1:'jan–fev',2:'jan–abr',3:'jan–jun',4:'jan–ago',5:'jan–out',6:'jan–dez'};
+var curBim=1;
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtNum(v){
+  if(v==null||isNaN(v)) return '<span style="color:#cbd5e1">–</span>';
+  if(v===0) return '<span style="color:#cbd5e1">–</span>';
+  var abs=Math.abs(v);
+  var s=abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v<0?'<span style="color:#ef4444">('+s+')</span>':s;
+}
+function fmtBi(v){
+  if(v==null||isNaN(v)) return '—';
+  var abs=Math.abs(v),sig=v<0?'-':'';
+  if(abs>=1e9) return sig+'R$ '+(abs/1e9).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' bi';
+  if(abs>=1e6) return sig+'R$ '+(abs/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' mi';
+  return sig+'R$ '+abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtPct(v){
+  if(v==null||isNaN(v)) return '—';
+  return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+}
+function fmtPctNum(v){
+  if(v==null||isNaN(v)) return '<span style="color:#cbd5e1">–</span>';
+  return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+}
+function dash(){return '<span style="color:#cbd5e1">–</span>';}
+
+// ─── SELETOR ──────────────────────────────────────────────────────────────────
+function setupBimBar(){
+  var bar=document.getElementById('bim-bar');
+  bar.innerHTML='';
+  for(var b=1;b<=6;b++){
+    var btn=document.createElement('button');
+    btn.className='bim-btn'+(b===curBim?' active':'');
+    btn.textContent=BIM_LABELS[b];
+    if(b>D.max_bimestre) btn.disabled=true;
+    btn.dataset.bim=b;
+    btn.onclick=(function(bb){return function(){selectBim(bb);};})(b);
+    bar.appendChild(btn);
+  }
+}
+function selectBim(b){
+  if(b>D.max_bimestre) return;
+  curBim=b;
+  document.querySelectorAll('.bim-btn').forEach(function(btn){
+    btn.classList.toggle('active', Number(btn.dataset.bim)===b);
+  });
+  refresh();
+}
+
+// ─── REFRESH ─────────────────────────────────────────────────────────────────
+function refresh(){
+  var bim=D.por_bimestre[String(curBim)];
+  if(!bim) return;
+  var isUlt=bim.is_ultimo;
+  document.getElementById('aviso-bim6').style.display=isUlt?'block':'none';
+
+  // badge bimestre
+  var bLabel='Acumulado '+BIM_SHORT[curBim];
+  ['badge-bim1','badge-bim2','badge-bim3'].forEach(function(id){
+    document.getElementById(id).textContent=bLabel;
+  });
+
+  renderKPIs(bim, isUlt);
+  renderReceitas(bim);
+  renderDespesas(bim, isUlt);
+  renderApuracao(bim, isUlt);
+}
+
+// ─── KPIs ─────────────────────────────────────────────────────────────────────
+function renderKPIs(bim, isUlt){
+  var ap=bim.apuracao;
+  var pct   = isUlt ? ap.pct_emp  : ap.pct_liq;
+  var pctMin= ap.pct_minimo;
+  var xvi   = isUlt ? ap.XVI.emp  : ap.XVI.liq;
+  var xviii = isUlt ? ap.XVIII.emp : ap.XVIII.liq;
+  var xvii  = ap.XVII;
+  var cumprido = pct!=null && pctMin!=null && pct>=pctMin;
+
+  // card %
+  var kpiPct=document.getElementById('kpi-pct');
+  kpiPct.className='kpi-card destaque'+(pct==null?'':cumprido?' cumprido':' abaixo');
+  document.getElementById('kv-pct').textContent=pct!=null?fmtPct(pct):'—';
+  var badge=document.getElementById('kb-pct');
+  if(pct==null){badge.textContent='—';badge.className='kpi-badge';}
+  else if(cumprido){badge.textContent='✓ Meta Cumprida';badge.className='kpi-badge ok';}
+  else{badge.textContent='✗ Abaixo do Mínimo';badge.className='kpi-badge nok';}
+  document.getElementById('kref-pct').textContent='Mínimo exigido: '+(pctMin!=null?fmtPct(pctMin):'—');
+
+  // card XVI
+  var kXVI=document.getElementById('kpi-xvi');
+  kXVI.className='kpi-card'+(xvi>0?' surplus':xvi<0?' deficit':' neutral');
+  document.getElementById('kv-xvi').textContent=fmtBi(xvi);
+  document.getElementById('ksub-xvi').textContent=(isUlt?'Despesa empenhada':'Despesa liquidada')+' — '+BIM_SHORT[curBim];
+
+  // card XVII
+  document.getElementById('kv-xvii').textContent=fmtBi(xvii);
+
+  // card XVIII
+  var kXVIII=document.getElementById('kpi-xviii');
+  kXVIII.className='kpi-card'+(xviii>0?' surplus':xviii<0?' deficit':' neutral');
+  document.getElementById('kv-xviii').textContent=fmtBi(xviii);
+}
+
+// ─── TABELA RECEITAS ──────────────────────────────────────────────────────────
+function renderReceitas(bim){
+  var rec=bim.rec;
+  var det=rec.detalhe||{};
+  function row(nome, obj, cls, ind, total){
+    var pi=obj?obj.prev_ini:null,pa=obj?obj.prev_atu:null,re=obj?obj.realizado:null;
+    var pctBA=(pa&&pa!==0&&re!=null)?fmtPctNum(re/pa*100):dash();
+    var tc=total?'total':'num';
+    var n0=total?'n0':'';
+    return '<tr class="'+(cls||'')+'">'
+      +'<td class="name'+(ind?' '+ind:'')+'">'+escHtml(nome)+'</td>'
+      +'<td class="'+tc+'">'+fmtNum(pi)+'</td>'
+      +'<td class="'+tc+'">'+fmtNum(pa)+'</td>'
+      +'<td class="'+tc+'">'+fmtNum(re)+'</td>'
+      +'<td class="pct">'+pctBA+'</td>'
+      +'</tr>';
+  }
+  function sep(){return '<tr class="sep"><td colspan="5"></td></tr>';}
+  var f=[];
+  f.push('<tr class="n0"><td class="name"><strong>COMPETÊNCIA TRIBUTÁRIA ESTADUAL (I)</strong></td>'
+    +'<td class="total">'+fmtNum(rec.I.prev_ini)+'</td>'
+    +'<td class="total">'+fmtNum(rec.I.prev_atu)+'</td>'
+    +'<td class="total">'+fmtNum(rec.I.realizado)+'</td>'
+    +'<td class="pct">'+(rec.I.prev_atu?fmtPctNum(rec.I.realizado/rec.I.prev_atu*100):dash())+'</td>'
+    +'</tr>');
+  f.push('<tr class="n1"><td class="name ind1">RECEITA DE IMPOSTOS: Somatório</td><td colspan="4"></td></tr>');
+  f.push(row('Receita Resultante do ICMS (75%)', _sum(det.icms_75,det.multas_icms_75), 'n2','ind2'));
+  f.push(row('  ICMS (75%)', det.icms_75, 'n3','ind3'));
+  f.push(row('  Multas, Juros e Outros Encargos do ICMS (75%)', det.multas_icms_75, 'n3','ind3'));
+  f.push(row('Adicional até 2% do ICMS — Fundo de Combate à Pobreza (75%)', det.fcp_75, 'n2','ind2'));
+  f.push(row('Receita Resultante do ITCD', det.itcd, 'n2','ind2'));
+  f.push(row('Receita Resultante do IPVA (50%) — Comp. Estadual', det.ipva_est, 'n2','ind2'));
+  f.push(row('IRRF', det.irrf, 'n2','ind2'));
+  f.push('<tr class="n1"><td class="name ind1">RECEITA DE TRANSFERÊNCIAS CONSTITUCIONAIS E LEGAIS: Somatório</td><td colspan="4"></td></tr>');
+  f.push(row('Cota-Parte FPE', det.fpe, 'n2','ind2'));
+  f.push(row('Cota-Parte IPI-Exportação (75%)', det.ipi_75, 'n2','ind2'));
+  f.push(row('Outras Transferências Constitucionais (75%)', det.outras_transf_75, 'n2','ind2'));
+  f.push(sep());
+  f.push('<tr class="n0"><td class="name"><strong>COMPETÊNCIA TRIBUTÁRIA MUNICIPAL (II)</strong></td>'
+    +'<td class="total">'+fmtNum(rec.II.prev_ini)+'</td>'
+    +'<td class="total">'+fmtNum(rec.II.prev_atu)+'</td>'
+    +'<td class="total">'+fmtNum(rec.II.realizado)+'</td>'
+    +'<td class="pct">'+(rec.II.prev_atu?fmtPctNum(rec.II.realizado/rec.II.prev_atu*100):dash())+'</td>'
+    +'</tr>');
+  f.push('<tr class="n1"><td class="name ind1">RECEITA DE IMPOSTOS: Somatório</td><td colspan="4"></td></tr>');
+  f.push(row('Receita Resultante do ICMS (25%)', _sum(det.icms_25,det.multas_icms_25), 'n2','ind2'));
+  f.push(row('  ICMS (25%)', det.icms_25, 'n3','ind3'));
+  f.push(row('  Multas, Juros e Outros Encargos do ICMS (25%)', det.multas_icms_25, 'n3','ind3'));
+  f.push(row('Adicional até 2% do ICMS — Fundo de Combate à Pobreza (25%)', det.fcp_25, 'n2','ind2'));
+  f.push(row('Receita Resultante do IPVA (50%) — Comp. Municipal', det.ipva_mun, 'n2','ind2'));
+  f.push(row('Receita Resultante do IPTU', det.iptu, 'n2','ind2'));
+  f.push(row('Receita Resultante do ITBI', det.itbi, 'n2','ind2'));
+  f.push(row('Receita Resultante do ISS', det.iss, 'n2','ind2'));
+  f.push('<tr class="n1"><td class="name ind1">RECEITA DE TRANSFERÊNCIAS CONSTITUCIONAIS E LEGAIS: Somatório</td><td colspan="4"></td></tr>');
+  f.push(row('Cota-Parte FPM', det.fpm, 'n2','ind2'));
+  f.push(row('Cota-Parte ITR', det.itr, 'n2','ind2'));
+  f.push(row('Cota-Parte IPI-Exportação (25%)', det.ipi_25, 'n2','ind2'));
+  f.push(row('Outras Transferências Constitucionais (25%)', det.outras_transf_25, 'n2','ind2'));
+  f.push(sep());
+  f.push('<tr class="n0"><td class="name"><strong>TOTAL DAS RECEITAS RESULTANTES DE IMPOSTOS E TRANSFERÊNCIAS (III) = (I) + (II)</strong></td>'
+    +'<td class="total">'+fmtNum(rec.III.prev_ini)+'</td>'
+    +'<td class="total">'+fmtNum(rec.III.prev_atu)+'</td>'
+    +'<td class="total">'+fmtNum(rec.III.realizado)+'</td>'
+    +'<td class="pct">'+(rec.III.prev_atu?fmtPctNum(rec.III.realizado/rec.III.prev_atu*100):dash())+'</td>'
+    +'</tr>');
+  document.getElementById('tbl-receitas').innerHTML=f.join('');
+}
+
+function _sum(){
+  var out={prev_ini:0,prev_atu:0,realizado:0};
+  for(var i=0;i<arguments.length;i++){
+    var o=arguments[i];
+    if(!o) continue;
+    out.prev_ini  +=(o.prev_ini  ||0);
+    out.prev_atu  +=(o.prev_atu  ||0);
+    out.realizado +=(o.realizado ||0);
+  }
+  return out;
+}
+
+// ─── TABELA DESPESAS ─────────────────────────────────────────────────────────
+var SUB_LABELS={
+  IV:'ATENÇÃO BÁSICA (IV)',
+  V:'ASSISTÊNCIA HOSPITALAR E AMBULATORIAL (V)',
+  VI:'SUPORTE PROFILÁTICO E TERAPÊUTICO (VI)',
+  VII:'VIGILÂNCIA SANITÁRIA (VII)',
+  VIII:'VIGILÂNCIA EPIDEMIOLÓGICA (VIII)',
+  IX:'ALIMENTAÇÃO E NUTRIÇÃO (IX)',
+  X:'OUTRAS SUBFUNÇÕES (X)',
+};
+
+function renderDespesas(bim, isUlt){
+  var dep=bim.dep;
+  function depCols(obj, isTot){
+    var tc=isTot?'total':'num';
+    return '<td class="'+tc+'">'+fmtNum(obj.dot_ini)+'</td>'
+      +'<td class="'+tc+'">'+fmtNum(obj.dot_atu)+'</td>'
+      +'<td class="'+tc+'">'+fmtNum(obj.emp)+'</td>'
+      +'<td class="'+tc+'">'+fmtNum(obj.liq)+'</td>'
+      +'<td class="'+tc+'">'+fmtNum(obj.pago)+'</td>'
+      +'<td class="'+tc+'">'+fmtNum(obj.rpnp)+'</td>';
+  }
+  function depSubRow(k){
+    var d=dep[k];
+    if(!d) return '';
+    var rows=[];
+    rows.push('<tr class="n0"><td class="name">'+SUB_LABELS[k]+'</td>'+depCols(d)+'</tr>');
+    rows.push('<tr class="n1"><td class="name ind1">Despesas Correntes</td>'+depCols(d.cor)+'</tr>');
+    rows.push('<tr class="n1"><td class="name ind1">Despesas de Capital</td>'+depCols(d.cap)+'</tr>');
+    return rows.join('');
+  }
+  function sep(){return '<tr class="sep"><td colspan="7"></td></tr>';}
+  var f=[];
+  ['IV','V','VI','VII','VIII','IX','X'].forEach(function(k){
+    f.push(depSubRow(k));
+    f.push(sep());
+  });
+  var xi=dep.XI||{dot_ini:0,dot_atu:0,emp:0,liq:0,pago:0,rpnp:0};
+  f.push('<tr class="n0"><td class="name"><strong>TOTAL (XI) = (IV+V+VI+VII+VIII+IX+X)</strong></td>'+depCols(xi,true)+'</tr>');
+  document.getElementById('tbl-despesas').innerHTML=f.join('');
+}
+
+// ─── TABELA APURAÇÃO ─────────────────────────────────────────────────────────
+function renderApuracao(bim, isUlt){
+  var ap=bim.apuracao;
+  function r3(nome, emp, liq, pago, cls){
+    var c=cls||'';
+    return '<tr class="'+c+'"><td class="name">'+escHtml(nome)+'</td>'
+      +'<td class="center">'+fmtNum(emp)+'</td>'
+      +'<td class="center">'+fmtNum(liq)+'</td>'
+      +'<td class="center">'+fmtNum(pago)+'</td>'
+      +'</tr>';
+  }
+  function r3v(nome, v, cls){
+    return '<tr class="'+(cls||'')+'"><td class="name">'+escHtml(nome)+'</td>'
+      +'<td class="center">'+fmtNum(v)+'</td>'
+      +'<td class="center">'+fmtNum(v)+'</td>'
+      +'<td class="center">'+dash()+'</td>'
+      +'</tr>';
+  }
+  var sep='<tr class="sep"><td colspan="4"></td></tr>';
+  var pct    = isUlt ? ap.pct_emp  : ap.pct_liq;
+  var pctMin = ap.pct_minimo;
+  var cumprido = pct!=null && pctMin!=null && pct>=pctMin;
+
+  var f=[];
+  f.push(r3('Total das Despesas com ASPS (XII) = (XI)',
+    ap.XII.emp, ap.XII.liq, ap.XII.pago, 'n1'));
+  f.push(r3v('(-) Restos a Pagar Não Processados Inscritos Indevidamente sem Disponibilidade Financeira (XIII)',
+    ap.XIII, 'n2'));
+  f.push(r3v('(-) Despesas Custeadas com Recursos Vinculados ao Percentual Mínimo não Aplicado em Exercícios Anteriores (XIV)',
+    ap.XIV, 'n2'));
+  f.push(r3v('(-) Despesas Custeadas com Disponibilidade de Caixa Vinculada aos Restos a Pagar Cancelados (XV)',
+    ap.XV, 'n2'));
+  f.push(sep);
+  f.push('<tr class="n0"><td class="name"><strong>VALOR APLICADO EM ASPS (XVI) = (XII − XIII − XIV − XV)</strong></td>'
+    +'<td class="total center">'+fmtNum(ap.XVI.emp)+'</td>'
+    +'<td class="total center">'+fmtNum(ap.XVI.liq)+'</td>'
+    +'<td class="total center">'+fmtNum(ap.XVI.pago)+'</td>'
+    +'</tr>');
+  f.push('<tr class="n1"><td class="name">Despesa M&#237;nima a ser Aplicada em ASPS (XVII) = (I) &times; 12% + (II) &times; 15% (LC 141/2012)</td>'
+    +'<td class="num center" colspan="3">'+fmtNum(ap.XVII)+'</td>'
+    +'</tr>');
+  f.push('<tr class="n1"><td class="name">Despesa M&#237;nima a ser Aplicada em ASPS (XVII) = (III) &times; % (Lei Org&#226;nica do DF)</td>'
+    +'<td class="num" colspan="3">'+dash()+'</td>'
+    +'</tr>');
+  f.push(sep);
+  var xviiiVal = isUlt ? ap.XVIII.emp : ap.XVIII.liq;
+  f.push('<tr class="n0"><td class="name"><strong>Diferen&#231;a entre o Valor Aplicado e a Despesa M&#237;nima a ser Aplicada (XVIII) = (XVI (d ou e) &minus; XVII)</strong></td>'
+    +'<td class="total center '+(xviiiVal>=0?'surplus':'deficit')+'" colspan="3">'+fmtNum(xviiiVal)+'</td>'
+    +'</tr>');
+  f.push(sep);
+  var pctVal = isUlt ? ap.pct_emp : ap.pct_liq;
+  f.push('<tr class="pct-row '+(cumprido?'ok':'nok')+'"><td class="name">'
+    +'<strong>PERCENTUAL DA RECEITA DE IMPOSTOS E TRANSFER&#202;NCIAS CONSTITUCIONAIS E LEGAIS APLICADO EM ASPS (XVI / III)*100 (m&#237;nimo de 12% ou de 15%, dependendo da compet&#234;ncia tribut&#225;ria, conforme LC n&#176; 141/2012 ou % da Lei Org&#226;nica do DF)'
+    +(pctMin!=null?' &mdash; M&#237;nimo: '+fmtPct(pctMin):'')+'</strong>'
+    +'</td>'
+    +'<td class="num center" colspan="3">'+fmtPctNum(pctVal)+'</td>'
+    +'</tr>');
+  document.getElementById('tbl-apuracao').innerHTML=f.join('');
+}
+
+// ─── FETCH & INIT ────────────────────────────────────────────────────────────
+(function(){
+  var img=document.getElementById('brasao');
+  img.src='../tools/Bras%C3%A3o_do_Distrito_Federal_Brasil.png';
+  img.onerror=function(){img.style.display='none';};
+  var overlay=document.getElementById('loading-overlay');
+
+  function fetchJsonGz(url){
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      var ds=new DecompressionStream('gzip');
+      return new Response(r.body.pipeThrough(ds)).text();
+    }).then(function(t){return JSON.parse(t);});
+  }
+
+  var SUPA_URL='https://otrlwfdtdrqpynemoexj.supabase.co';
+  var SUPA_KEY='sb_publishable_UKK5VWsrCXd1_zRR8tP16g_vySXJN5a';
+  function fetchSupabase(){
+    var ano=new Date().getFullYear();
+    return fetch(SUPA_URL+'/rest/v1/minimo_saude?select=dados,atualizado_em&ano=eq.'+ano,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    }).then(function(r){
+      if(!r.ok) throw new Error('Supabase HTTP '+r.status);
+      return r.json();
+    }).then(function(rows){
+      if(!rows||!rows.length) throw new Error('Supabase: nenhum dado para '+ano);
+      var json=rows[0].dados;
+      json.atualizado_em=rows[0].atualizado_em;
+      return json;
+    });
+  }
+
+  function init(json){
+    D=json;
+    overlay.style.display='none';
+    var el=document.getElementById('data-atualizacao');
+    if(el&&json.atualizado_em){
+      var d=new Date(json.atualizado_em);
+      el.textContent='Dados atualizados em: '+d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+    }
+    curBim=Math.max(1,D.max_bimestre||1);
+    setupBimBar();
+    refresh();
+  }
+
+  fetchJsonGz('../data/gz/minimo_saude.json.gz?v='+new Date().toISOString().slice(0,10))
+    .catch(function(){return fetchSupabase();})
+    .then(init)
+    .catch(function(err){
+      overlay.innerHTML='<div style="font-size:2rem">&#9888;&#65039;</div>'
+        +'<div style="max-width:360px;text-align:center">Erro ao carregar dados: '+escHtml(err.message)+'</div>';
+    });
+})();
+</script>
+</body>
+</html>

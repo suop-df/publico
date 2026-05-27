@@ -1,0 +1,34 @@
+-- minimo_saude.sql
+-- Placeholder {SCHEMA_ANO} substituido pelo Python (ex: mil2026)
+-- COLUNAS RECEITA (sem filtro de UO/fonte):
+-- PREVISAO INICIAL:    COCONTACONTABIL IN (521110000)
+-- PREVISAO ATUALIZADA: COCONTACONTABIL IN (521110000,521210100,521210200)
+-- RECEITAS REALIZADAS: COCONTACONTABIL IN (621200000,621300000)
+-- COLUNAS DESPESA (ASPS) com filtro COUO=23901, COUG<>170203, cofonte:
+-- DOTACAO INICIAL:     SUBSTR(COCONTACONTABIL,1,5) IN (52211)
+-- DOTACAO ATUALIZADA:  SUBSTR(COCONTACONTABIL,1,5) IN (52211,52212,52215,52219)
+-- DESPESAS EMPENHADAS: SUBSTR(COCONTACONTABIL,1,5) IN (62213)
+-- DESPESAS LIQUIDADAS: SUBSTR(COCONTACONTABIL,1,7) IN (6221303,6221304,6221307)
+-- DESPESAS PAGAS:      SUBSTR(COCONTACONTABIL,1,7) IN (6221304)
+
+SELECT coug, couo, cofonte, cocontacontabil, cocontacorrente,
+conatureza, cofuncao, cosubfuncao, 
+vadebito, vacredito, inmes
+FROM {SCHEMA_ANO}.saldocontabil
+WHERE cocontacontabil IN (521110000, 521210100, 521210200,
+                          621200000, 621300000)
+OR (
+    (
+        SUBSTR(cocontacontabil,1,5) IN (52211,52212,52215,52219)
+        OR SUBSTR(cocontacontabil,1,5) IN (62213)
+    )
+    AND couo = 23901 -- UO Saúde
+    AND coug <> 170203
+    AND SUBSTR(cofonte,1,3) IN (100,101,102,105,109,300,301,302,305,309,702,802) -- Fonte Resumida
+    AND LPAD(cofuncao,2,0)||LPAD(cosubfuncao,3,0)||LPAD(coprograma,4,0)||LPAD(coprojeto,4,0)||LPAD(cosubtitulo,4,0) NOT IN
+    ('10122820285028859','10122820285040014','10122820285040098',
+    '10122820285046988','10122820285046990','10421621724268527',
+    '28846000190410031','28846000191270079') -- Programa de Trabalho (PT)
+    AND DECODE(cocontacontabil,639120300,SUBSTR(cocontacorrente,12,8), SUBSTR(cocontacorrente,33,8)) NOT IN ('31901195','31901131','31901125') -- Subitem
+    AND DECODE(cocontacontabil,639120300,SUBSTR(cocontacorrente,16,2), SUBSTR(conatureza,5,2)) NOT IN ('01','03','08','20','31','46','48','49','59','91','94') -- Elemento
+)
