@@ -12,3 +12,12 @@ data/saldo_funcao_subfuncao.json
 
 # Planilha FCDF — dado local, não versionar
 data/UFIS-FCDFDespesadePessoal.xlsx
+
+# Projeção Fiscal — análise offline, não publicar no repo público
+projecao_fiscal/
+etl_projecao_fiscal.py
+proj_modelo.py
+data/queries/projecao_fiscal.sql
+docs/metodologia_projecao_fiscal.md
+tools/regra_projecao_fiscal.txt
+tools/gerar_metodologia_docx.py
