@@ -1,0 +1,386 @@
+REGRA GERAL:
+
+Contas que começam com número ímpar (1,3,5,7,9) possuem natureza devedora: SALDO = SUM(VADEBITO-VACREDITO)
+Contas que começam com número par (2,4,6,8) possuem natureza credora: SALDO = SUM(VACREDITO-VADEBITO)
+
+Considere:
+- nas contas de RECEITA SUBSTR(COCONTACORRENTE,1,8) como NR; 
+- COFONTEFEDERAL como FR
+
+QUADRO RECEITA RESULTANTE DE IMPOSTOS (Arts. 212 e 212-A da Constituição Federal)
+=================================================================================
+
+COLUNAS:
+
+PREVISÃO ATUALIZADA (a): SUBSTR(COCONTACONTABIL,1,4) IN  (5211,5212) AND COCONTACONTABIL <> 521120101,  SALDO
+RECEITAS REALIZADAS Até o Bimestre (b):  SUBSTR(COCONTACONTABIL,1,4) IN  (6212,6213) AND COCONTACONTABIL <> 621310100,  SALDO
+
+LINHAS:
+
+1- RECEITA DE IMPOSTOS Somatório dos itens 1.1 + 1.2 + 1.3 + 1.4 + 1.5 + 1.6 + 1.7
+    1.1- Receita Resultante do Imposto sobre a Circulação de Mercadorias e Serviços de Transporte Interestadual e Intermunicipal e de Comunicação – ICMS Somatório dos itens 1.1.1 + 1.1.2
+       1.1.1- ICMS - Principal e Encargos (Multas, Juros de Mora, Divida Ativa e Outros Encargos do ICMS) NR: 1114501X
+       1.1.2- Adicional de até 2% do ICMS destinado ao Fundo de Combate à Pobreza (ADCT, art. 82, §1º) NR: 1114502X
+    1.2- Receita Resultante do Imposto de Transmissão Causa Mortis e Doação de Bens e Direitos – ITCD  NR: 111252XX 
+    1.3- Receita Resultante do Imposto sobre a Propriedade de Veículos Automotores – IPVA NR: 111251XX 
+    1.4- Receita Resultante do Imposto sobre a Propriedade Predial e Territorial Urbana – IPTU NR: 111250XX 
+    1.5- Receita Resultante do Imposto sobre Transmissão Inter Vivos – ITBI NR: 111253XX
+    1.6- Receita Resultante do Imposto sobre Serviços de Qualquer Natureza – ISS ) NR: 1114511X + NR: 1114512X
+    1.7- Receita Resultante do Imposto de Renda Retido na Fonte – IRRF NR: 111303XX 
+    1.8- Receita de Outros Impostos NR: 111999XX 
+
+2- RECEITA DE TRANSFERÊNCIAS CONSTITUCIONAIS E LEGAIS Somatório dos itens 2.1 + 2.2 + 2.3 + 2.4 + 2.5 + 2.6
+    2.1- Cota-Parte FPE NR: 171150XX
+    2.2- Cota-Parte FPM NR: 1711511X + NR: 1711512X
+    2.3- Cota-Parte IPI-Exportação NR: 171153XX + NR: 172152XX
+    2.4- Cota-Parte ITR NR: 171152XX
+    2.5- Cota-Parte IOF-Ouro NR: 171155XX
+    2.6- Outras Transferências ou Compensações Financeiras Provenientes de Impostos e Transferências Constitucionais NR: 171961XX + NR: 171962XX + NR: 171963XX + NR: 172953XX
+
+4- TOTAL DESTINADO AO FUNDEB = 20% DE ((1.1) + (1.2) + (1.3) + (2.1) + (2.2) + (2.3) + (2.4) + (2.6))
+5- VALOR MÍNIMO A SER APLICADO ALÉM DO VALOR DESTINADO AO FUNDEB : 5% DE ((1.1) + (1.2) + (1.3) + (2.1) + (2.2) + (2.3) + (2.4) + (2.6)) + 25% DE ((1.4) + (1.5) + (1.6) + (1.7) + (1.8) + (2.5)): Resultado da fórmula
+
+
+QUADRO FUNDEB
+=============
+
+6- TOTAL DAS RECEITAS DO FUNDEB RECEBIDAS	Somatório dos itens 6.1 + 6.2 + 6.3 + 6.4
+    6.1- FUNDEB - Impostos e Transferências de Impostos	Somatório dos itens 6.1.1 + 6.1.2 + 6.1.3
+       6.1.1- Principal	FR: X540; NR: 175150XX
+       6.1.2- Rendimentos de Aplicação Financeira	FR: X540; NR: 132101XX + NR: 132102XX + NR: 132103XX + NR: 132105XX + NR: 132999XX
+       6.1.3- Ressarcimento de recursos do Fundeb	FR: X540; NR: 192251XX 
+    6.2- FUNDEB - Complementação da União - VAAF	Somatório dos itens 6.2.1 + 6.2.2 + 6.2.3
+       6.2.1- Principal	(FR: X541; NR: 171551XX) + (FR: X546; NR: 171553XX)
+       6.2.2- Rendimentos de Aplicação Financeira	(FR: X541 + FR: X546); NR: 132101XX + NR: 132102XX + NR: 132103XX + NR: 132105XX + NR: 132999XX
+       6.2.3- Ressarcimento de recursos do Fundeb	FR: X541 + FR: X546); NR: 192251XX 
+    6.3- FUNDEB - Complementação da União - VAAT	Somatório dos itens 6.3.1 + 6.3.2 + 6.3.3
+       6.3.1- Principal	FR: X542; NR: 171550XX
+       6.3.2- Rendimentos de Aplicação Financeira	FR: X542; NR: 132101XX + NR: 132102XX + NR: 132103XX + NR: 132105XX + NR: 132999XX
+       6.3.3- Ressarcimento de recursos do Fundeb	FR: X542; NR: 192251XX 
+    6.4- FUNDEB - Complementação da União - VAAR	Somatório dos itens 6.4.1 + 6.4.2 + 6.4.3 + 6.4.4
+       6.4.1- Principal	FR: X543; NR: 171552XX
+       6.4.2- Rendimentos de Aplicação Financeira	FR: X543; NR: 132101XX + NR: 132102XX + NR: 132103XX + NR: 132105XX + NR: 132999XX
+       6.4.3- Ressarcimento de recursos do Fundeb	FR: X543; NR: 192251XX
+6- TOTAL DAS RECEITAS DO FUNDEB RECEBIDAS	Somatório dos itens 6.1 + 6.2 + 6.3 + 6.4
+    6.1- FUNDEB - Impostos e Transferências de Impostos	Somatório dos itens 6.1.1 + 6.1.2 + 6.1.3
+       6.1.1- Principal	FR: X540; NR: 175150XX
+       6.1.2- Rendimentos de Aplicação Financeira	FR: X540; NR: 132101XX + NR: 132102XX + NR: 132103XX + NR: 132105XX + NR: 132999XX
+       6.1.3- Ressarcimento de recursos do Fundeb	FR: X540; NR: 192251XX 
+    6.2- FUNDEB - Complementação da União - VAAF	Somatório dos itens 6.2.1 + 6.2.2 + 6.2.3
+       6.2.1- Principal	(FR: X541; NR: 171551XX) + (FR: X546; NR: 171553XX)
+       6.2.2- Rendimentos de Aplicação Financeira	(FR: X541 + FR: X546); NR: 132101XX + NR: 132102XX + NR: 132103XX + NR: 132105XX + NR: 132999XX
+       6.2.3- Ressarcimento de recursos do Fundeb	(FR: X541 + FR: X546); NR: 192251XX 
+    6.3- FUNDEB - Complementação da União - VAAT	Somatório dos itens 6.3.1 + 6.3.2 + 6.3.3
+       6.3.1- Principal	FR: X542; NR: 171550XX
+       6.3.2- Rendimentos de Aplicação Financeira	FR: X542; NR: 132101XX + NR: 132102XX + NR: 132103XX + NR: 132105XX + NR: 132999XX
+       6.3.3- Ressarcimento de recursos do Fundeb	FR: X542; NR: 192251XX 
+    6.4- FUNDEB - Complementação da União - VAAR	Somatório dos itens 6.4.1 + 6.4.2 + 6.4.3 + 6.4.4
+       6.4.1- Principal	FR: X543; NR: 171552XX
+       6.4.2- Rendimentos de Aplicação Financeira	FR: X543; NR: 132101XX + NR: 132102XX + NR: 132103XX + NR: 132105XX + NR: 132999XX
+       6.4.3- Ressarcimento de recursos do Fundeb	FR: X543; NR: 192251XX 
+
+7- RESULTADO LÍQUIDO DAS TRANSFERÊNCIAS DO FUNDEB (6.1.1) – 4): resultado da fórmula (L6.1.1 – L4)
+
+QUADRO RECURSOS RECEBIDOS EM EXERCÍCIOS ANTERIORES E NÃO UTILIZADOS (SUPERÁVIT)
+========================================================================
+8- TOTAL DOS RECURSOS DE SUPERÁVIT: somatório L8.1 + L8.2
+8.1- SUPERÁVIT DO EXERCÍCIO IMEDIATAMENTE ANTERIOR (NÃO APLICADO): valor fixo, informado
+     manualmente a cada exercício (constante MDE_SUPERAVIT_8_1 no etl.py).
+     Não é calculável a partir do Oracle (mil2001.saldocontabil_ex não retém dados de
+     ano_atual-2). Atualizar anualmente com base no L8 publicado no RREO do exercício
+     anterior. Valor atual: 31.361.102,40
+
+8.2- SUPERÁVIT RESIDUAL DE OUTROS EXERCÍCIOS: valor fixo, informado manualmente
+     (constante MDE_SUPERAVIT_8_2 no etl.py). Valor atual: 0,00
+
+9- TOTAL DOS RECURSOS DO FUNDEB DISPONÍVEIS PARA UTILIZAÇÃO (6 +8): resultado da fórmula L6 + L8
+
+QUADRO DESPESAS COM RECUROS DO FUNDEB (Por Subfunção)
+=====================================================
+
+COLUNAS:
+
+DOTACAO ATUALIZADA (c):  SUBSTR(COCONTACONTABIL,1,5) IN (52211,52212,52215,52219)
+DESPESAS EMPENHADAS (d): SUBSTR(COCONTACONTABIL,1,5) IN (62213)
+DESPESAS LIQUIDADAS (e): SUBSTR(COCONTACONTABIL,1,7) IN (6221303,6221304,6221307)
+DESPESAS PAGAS (f): SUBSTR(COCONTACONTABIL,1,7) IN (6221304)
+INSCRITAS EM RESTOS A PAGAR NÃO PROCESSADOS (g):
+
+
+LINHAS:
+
+10- TOTAL DAS DESPESAS COM RECURSOS DO FUNDEB
+ 10.1- PROFISSIONAIS DA EDUCAÇÃO BÁSICA: somatório
+  10.1.1- Educação Infantil: (FR: X540 + X541 + X542 + X543); CO: 1070; ND: 31000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12  E COSUBFUNCAO: 365
+  10.1.2- Ensino Fundamental:  (FR: X540 + X541 + X542 + X543);  CO: 1070; ND: 31000000(-) ND: 31900100(-) ND: 31900300(-) ND: 31900300; COFUNCAO: 12  E COSUBFUNCAO: 361
+  10.1.3- Ensino Médio:  (FR: X540 + X541 + X542 + X543);  CO: 1070; ND: 31000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 362
+  10.1.4- Educação de Jovens e Adultos: (FR: X540 + X541 + X542 + X543);  CO: 1070; ND: 31000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 366
+  10.1.5- Educação Especial: (FR: X540 + X541 + X542 + X543);  CO: 1070; ND: 31000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 367
+  10.1.6- Administração Geral:  (FR: X540 + X541 + X542 + X543);  CO: 1070; ND: 31000000(-) ND: 31900100(-) ND: 319003000; COFUNCAO: 12 E COSUBFUNCAO: 122
+  10.1.7- Ensino Profissional:  (FR: X540 + X541 + X542 + X543);  CO: 1070; ND: 31000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 363
+ 10.2- OUTRAS DESPESAS: somatório
+  10.2.1- Educação Infantil:  (FR: X540 + X541 + X542 + X543); EXCETO CO: 1070; ND: 30000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 365
+  10.2.2- Ensino Fundamental: (FR: X540 + X541 + X542 + X543); EXCETO CO: 1070; ND: 30000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 361
+  10.2.3- Ensino Médio: (FR: X540 + X541 + X542 + X543); EXCETO CO: 1070; ND: 30000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 362
+  10.2.4- Educação de Jovens e Adultos:  (FR: X540 + X541 + X542 + X543); EXCETO CO: 1070; ND: 30000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 366
+  10.2.5- Educação Especial: (FR: X540 + X541 + X542 + X543); EXCETO CO: 1070; ND: 30000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 367
+  10.2.6- Administração Geral:  (FR: X540 + X541 + X542 + X543); EXCETO CO: 1070; ND: 30000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 122
+  10.2.7- Transporte (Escolar): (FR: X540 + X541 + X542 + X543); EXCETO CO: 1070; ND: 30000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: 781 + 782 + 783 + 784 + 785
+  10.2.8- Outras: (FR: X540 + X541 + X542 + X543); EXCETO CO: 1070; {[(ND: 30000000(-) ND: 31900100(-) ND: 31900300; COFUNCAO: 12 E COSUBFUNCAO: XXX, onde XXX=todas as demais subfunções atípicas à Função Educação] + [(ND: 32000000; 	(COFUNCAO: 28 E COFUNCAO IN (843,844)]}
+
+QUADRO INDICADORES DO FUNDEB
+============================
+DESPESAS CUSTEADAS COM RECEITAS DO FUNDEB RECEBIDAS NO EXERCÍCIO
+----------------------------------------------------------------
+
+LINHAS:
+
+11- TOTAL DAS DESPESAS CUSTEADAS COM RECURSOS DO FUNDEB RECEBIDAS NO EXERCÍCIO:	Somatório dos itens 11.1 + 11.2 + 11.3 + 11.4 
+   11.1- Total das Despesas custeadas com FUNDEB - Impostos e Transferências de Impostos: FR: 1540; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) 
+   11.2- Total das Despesas custeadas com FUNDEB - Complementação da União - VAAF: FR: 1541; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) 
+   11.3- Total das Despesas custeadas com FUNDEB - Complementação da União - VAAT: FR: 1542;  ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) 
+   11.4- Total das Despesas custeadas com FUNDEB - Complementação da União - VAAR: FR: 1543;  ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) 
+12- TOTAL DAS DESPESAS DO FUNDEB COM PROFISSIONAIS DA EDUCAÇÃO BÁSICA:	(FR: 1540 + 1541 + 1542); CO: 1070; ND: ND: 31000000(-) ND: 31900100(-) ND: 31900300
+13- TOTAL DAS DESPESAS CUSTEADAS COM FUNDEB - COMPLEMENTAÇÃO DA UNIÃO - VAAT APLICADAS NA EDUCAÇÃO INFANTIL: FR: 1542; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-); COFUNCAO: 12 E COSUBFUNCAO: 365
+14- TOTAL DAS DESPESAS CUSTEADAS COM FUNDEB - COMPLEMENTAÇÃO DA UNIÃO - VAAT APLICADAS EM DESPESA DE CAPITAL: FR: 1542
+
+INDICADORES - Art. 212-A, inciso XI e § 3º - Constituição Federal
+-----------------------------------------------------------------
+
+VALOR EXIGIDO (j)
+15- Mínimo de 70% do FUNDEB na Remuneração dos Profissionais da Educação Básica: (L6(b) - L6.4(b)) * 70 / 100	
+16- Percentual da Complementação da União ao FUNDEB - VAAT na Educação Infantil (Indicador IEI): [L6.3(b) * IEI]	
+17- Mínimo de 15% da Complementação da União ao FUNDEB - VAAT em Despesas de Capital: L6.3(b) * 15 / 100	
+
+VALOR APLICADO (k)
+15- Mínimo de 70% do FUNDEB na Remuneração dos Profissionais da Educação Básica: L12(d ou e)	
+16- Percentual da Complementação da União ao FUNDEB - VAAT na Educação Infantil (Indicador IEI): 13(d ou e) (
+17- Mínimo de 15% da Complementação da União ao FUNDEB - VAAT em Despesas de Capital: L14(d ou e)
+
+VALOR CONSIDERADO APÓS DEDUÇÕES (l)
+15- Mínimo de 70% do FUNDEB na Remuneração dos Profissionais da Educação Básica: L12(d ou e) - L12(h) 	
+16- Percentual da Complementação da União ao FUNDEB - VAAT na Educação Infantil (Indicador IEI): L13(d ou e) - L13(h)		
+17- Mínimo de 15% da Complementação da União ao FUNDEB - VAAT em Despesas de Capital: L14(d ou e) - L14(h)		
+
+% VALOR APLICADO (m)
+15- Mínimo de 70% do FUNDEB na Remuneração dos Profissionais da Educação Básica: [L15(l) / [L6(b) - L6.4(b)] *100 
+16- Percentual da Complementação da União ao FUNDEB - VAAT na Educação Infantil (Indicador IEI): L16(l) / L6.3(b) * 100	 
+17- Mínimo de 15% da Complementação da União ao FUNDEB - VAAT em Despesas de Capital: L17(l) /  L6.3(b) * 100	 	
+
+INDICADOR - Art.25, § 3º - Lei nº 14.113, de 2020 - (Máximo de 10% de Superávit)
+--------------------------------------------------------------------------------
+VALOR MÁXIMO PERMITIDO (n)
+18- TOTAL DA RECEITA RECEBIDA E NÃO APLICADA NO EXERCÍCIO: L6(b) * 10 / 100
+
+VALOR NÃO APLICADO (o)
+18- TOTAL DA RECEITA RECEBIDA E NÃO APLICADA NO EXERCÍCIO: L6(b) -  [L11(d ou e) - L11(i)]
+
+VALOR NÃO APLICADO APÓS AJUSTE (p)	
+18- TOTAL DA RECEITA RECEBIDA E NÃO APLICADA NO EXERCÍCIO: L18(o) + [( L11(h) - L11(i)) se > 0)]
+
+VALOR NÃO APLICADO EXCEDENTE AO MÁXIMO PERMITIDO (q)	
+18- TOTAL DA RECEITA RECEBIDA E NÃO APLICADA NO EXERCÍCIO: L18(p) - L18(n) (somente se > 0)
+
+% NÃO APLICADO (r)
+18- TOTAL DA RECEITA RECEBIDA E NÃO APLICADA NO EXERCÍCIO: L18(p) / L6(b) * 100
+
+
+INDICADOR - Art.25, § 3º - Lei nº 14.113, de 2020 - (Aplicação do Superávit de Exercício Anterior)
+--------------------------------------------------------------------------------------------------
+
+COLUNAS:
+
+VALOR DE SUPERÁVIT PERMITIDO NO EXERCÍCIO ANTERIOR (s): 10% × receita FUNDEB do exercício
+   anterior — fórmula calculada (vide 19.1(s)/19.2(s) abaixo)
+VALOR NÃO APLICADO NO EXERCÍCIO ANTERIOR (t): = L8 (8.1 + 8.2) — vide 19.1(t)/19.2(t) abaixo
+VALOR DE SUPERÁVIT APLICADO ATÉ O PRIMEIRO QUADRIMESTRE (u): COCONTACONTABIL IN (622130300,622130400,622130700,853230000). Total das despesas executadas até o primeiro quadrimestre — pendente de implementação
+VALOR APLICADO APÓS O PRIMEIRO QUADRIMESTRE (v): Não há valor até o 1º quadrimestre. A partir de então (a partir do RREO 3º bimestre) o saldo da diferença entre o executado e o liquidado do 1º quadrimestre deve ser informado nessa 							coluna — pendente de implementação
+VALOR TOTAL DE SUPERÁVIT NÃO APLICADO ATÉ O FINAL DO EXERCÍCIO (w) = MAX(0, (t) - (u) - (v)) — vide 19.1(w)/19.2(w) abaixo
+VALOR DE SUPERÁVIT PERMITIDO NO EXERCÍCIO ANTERIOR NÃO APLICADO ATÉ O PRIMEIRO QUADRIMESTRE DO EXERCÍCIO ATUAL (x) = MAX(0, (t) - (u)) — vide 19.1(x)/19.2(x) abaixo
+
+LINHAS:
+
+19- Total das Despesas custeadas com Superávit do FUNDEB: somatório 19.1 + 19.2
+ 19.1- Total das Despesas custeadas com FUNDEB - Impostos e Transferências de Impostos:
+   (s) = 10% × [Parte 1 + Parte 2]
+          Parte 1: COCONTACONTABIL IN (621200000, 621300000); SUBSTR(cocontacorrente,1,8) = '17515001'
+          Parte 2: COCONTACONTABIL IN (621200000, 621300000); SUBSTR(TO_CHAR(cofonte),1,3) = '122'
+          Fonte: mil2001.saldocontabil_ex, coexercicio = ano corrente - 1
+   (t) = L8 (8.1 + 8.2) — mesmas constantes manuais MDE_SUPERAVIT_8_1 / MDE_SUPERAVIT_8_2
+   (u) = pendente de implementação (fixo em 0,00 por enquanto)
+   (v) = pendente de implementação (fixo em 0,00 por enquanto)
+   (w) = MAX(0, (t) - (u) - (v)) = (t), enquanto (u) e (v) = 0
+   (x) = MAX(0, (t) - (u)) = (t), enquanto (u) = 0
+ 19.2- Total das Despesas custeadas com FUNDEB - Complementação da União (VAAF + VAAT):
+   (s) = 10% × [COCONTACONTABIL IN (621200000, 621300000); SUBSTR(cocontacorrente,1,4) = '1715']          
+          Fonte: mil2001.saldocontabil_ex, coexercicio = ano corrente - 1
+   (t) = 0,00 (fixo)
+   (u) = pendente de implementação (fixo em 0,00 por enquanto)
+   (v) = pendente de implementação (fixo em 0,00 por enquanto)
+   (w) = MAX(0, (t) - (u) - (v)) = 0,00
+   (x) = MAX(0, (t) - (u)) = 0,00
+
+20-TOTAL DAS DESPESAS COM AÇÕES TÍPICAS DE MDE CUSTEADAS COM RECEITAS DE IMPOSTOS: Somatório dos itens 20.1 + 20.2 + 20.3 + 20.4 + 20.5 + 20.6 + 20.7 + 20.8
+   20.1- EDUCAÇÃO INFANTIL: FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12  COSUBFUNCAO: 365   
+   20.2- ENSINO FUNDAMENTAL: FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12  COSUBFUNCAO: 361 
+   20.3- ENSINO MÉDIO: FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12  COSUBFUNCAO: 362
+   20.4- ENSINO SUPERIOR: FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12  COSUBFUNCAO: 364
+   20.5- ENSINO PROFISSIONAL: FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12  COSUBFUNCAO: 363
+   20.4- EDUCAÇÃO DE JOVENS E ADULTOS: FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000 (-) ND: 31900100 (-) ND: 31900300 (-); COFUNCAO: 12  COSUBFUNCAO: 366
+   20.5- EDUCAÇÃO ESPECIAL: FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12  COSUBFUNCAO: 367
+   20.6- ADMINISTRAÇÃO GERAL:  FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12  COSUBFUNCAO: 122
+   20.7- TRANSPORTE (Escolar):  FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12  COSUBFUNCAO: 785
+   20.8- OUTRAS:  FR: X500 + FR: X502 + XFR: 718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + (ND: 40000000); COFUNCAO: 12 E COSUBFUNCAO: XXX, onde XXX=todas as demais subfunções atípicas à Função Educação + ND: 			 32000000; (COFUNCAO: 28 E COFUNCAO IN (843,844)]}
+
+NOTA — EXCLUSÕES ADICIONAIS DOS QUADROS 20 E 21 (conferidas ao centavo contra o
+RREO Anexo 8 oficial do 1º bimestre/2026; fonte: aba "Exclusões" da
+MDE20261B.xlsx). Tudo o que segue vale igualmente para o Quadro 21 (a exclusão
+do PT entra pelo NOT IN do CO 1001 e o abate ND8 é replicado no etl.py; os
+centavos das dotações oficiais 21.2 = 4.802.056.566,39 e 21.5 = 996.693.857,01
+são o mesmo abate). Única diferença no Quadro 21: as fatias ND8 de fontes
+1021/1002 (FR 1540) já integram a base via FUNDEB, então basta não somá-las —
+a subtração explícita só se aplica a fatia fora da base do quadro:
+
+1. PT 12421621724260006 incluído na lista NOT IN do CO 1001 (minimo_educacao.sql):
+   na LOA 2026 a ação 2426 migrou da função 28 (PTs 28421621724260004/0087/8424,
+   já excluídos) para a função 12/subfunção 421, e a exclusão oficial acompanhou.
+   Era responsável por 3.379.532,00 de diferença na dotação da linha 20.8.
+
+2. NDs excluídos no nível de DESDOBRAMENTO (8 dígitos), além dos elementos do
+   CO 1001: 31901195, 31901131, 31901125, 33903023 (constante ND8_EXCL_MDE no
+   etl.py). Tratamento:
+   - EXECUÇÃO (empenhadas/liquidadas/pagas): fatias ABATIDAS das colunas do
+     Quadro 20. Para fatias dentro do universo FR 500/502/718 basta não somar;
+     para fatias de fontes FORA desse universo (ex.: 1021/1002), que nunca
+     entraram na base, o etl.py SUBTRAI o valor — o RREO oficial abate essas
+     fatias das colunas de execução mesmo assim (conferido: emp/liq da 20.2 e
+     emp/liq/pagas da 20.5 diferiam em exatamente 8.305,99 até esse abate).
+   - DOTAÇÃO ATUALIZADA: o SIGGO não detalha dotação por desdobramento (conta
+     5221x só tem natureza de 6 dígitos), então o RREO oficial ABATE da dotação
+     o EMPENHADO acumulado dessas fatias — por isso a dotação oficial tem
+     centavos (ex.: 20.2 = 2.397.758.016,39). O etl.py replica esse abate.
+   - UNIVERSO do abate (vale para TODAS as colunas): toda fatia ND8 dentro do
+     CO 1001 — ou seja, fonte resumida SUBSTR(COFONTE,1,3) IN (100,101,102,
+     104,105,109,122,702 e equivalentes 3xx), UO 18101/18903, função 12,
+     elementos e PTs não excluídos. O filtro de COFONTEFEDERAL 500/502/718 do
+     Quadro 20 NÃO se aplica ao abate: o RREO oficial define o universo por
+     fonte resumida, não por cofontefederal.
+     Caso concreto (1º bim/2026): fatias 31901195 nas fontes 1021 e 1002
+     (PTs 12361822185020015 e 12367822185028857), cujo COFONTEFEDERAL é 1540
+     (FUNDEB) — fora de 500/502/718, mas abatidas pelo oficial mesmo assim.
+     NÃO usar lista fixa de fontes (1021/1002) nem incluir FR 1540 na regra do
+     quadro: o critério é a fonte resumida do CO 1001, e fatias futuras podem
+     surgir em outras fontes desse universo.
+
+3. Candidatos NÃO aplicados (constam como exclusão na planilha oficial, mas hoje
+   têm valor zero no nosso universo — sem efeito nos quadros): PTs
+   12126622114710029 e 12122822123960006 ("novo"). Reavaliar se surgir diferença
+   nas linhas 20.6/20.8 em bimestres futuros.
+
+DESPESAS COM MANUTENÇÃO E DESENVOLVIMENTO DO ENSINO – MDE - CUSTEADAS COM RECEITA DE IMPOSTOS E COM RECURSOS DO FUNDEB
+======================================================================================================================
+
+21- TOTAL DAS DESPESAS COM AÇÕES TÍPICAS DE MDE CUSTEADAS COM RECEITAS DE IMPOSTOS E FUNDEB: Somatório dos itens 21.1 + 21.2 + 21.3 + 21.4 + 21.5
+21.1- EDUCAÇÃO INFANTIL: (FR: X500 + FR: X502 + FR: X718; CO: 1001) + FR: X540 + FR: X541 + FR: X542 + FR: X543; ND: 30000000(-) ND: 31900100(-) ND: 31900300 + ND: 40000000; COFUNCAO = 12 E COSUBFUNCAO = 365
+21.2- ENSINO FUNDAMENTAL: (FR: X500 + FR: X502 + FR: X718; CO: 1001) + FR: X540 + FR: X541 + FR: X542 + FR: X543; ND: 30000000(-) ND: 31900100(-) ND: 31900300 + ND: 40000000; COFUNCAO = 12 E COSUBFUNCAO = 361
+21.3- ENSINO MÉDIO: (FR: X500 + FR: X502 + FR: X718; CO: 1001) + FR: X540 + FR: X541 + FR: X542 + FR: X543; ND: 30000000(-) ND: 31900100(-) ND: 31900300 + ND: 40000000; COFUNCAO = 12 E COSUBFUNCAO = 362
+21.4- ENSINO SUPERIOR: (FR: X500 + FR: X502 + FR: X718; CO: 1001) + FR: X540 + FR: X541 + FR: X542 + FR: X543; ND: 30000000(-) ND: 31900100(-) ND: 31900300 + ND: 40000000; COFUNCAO = 12 E COSUBFUNCAO = 364
+21.5 - DEMAIS ÁREAS DE ATUAÇÃO: (FR: X500 + FR: X502 + FR: X718; CO: 1001) + FR: X540 + FR: X541 + FR: X542 + FR: X543; ND: 30000000(-) ND: 31900100(-) ND: 31900300 + ND: 40000000; COFUNCAO = 12 E COSUBFUNCAO NOT IN (365,361,362,364)
+
+NOTA — EXCLUSÕES ADICIONAIS DO QUADRO 21 (mesma regra do Quadro 20 — ver NOTA
+completa após a linha 20.8; conferidas ao centavo contra o RREO oficial do
+1º bimestre/2026):
+
+1. PT 12421621724260006 excluído via NOT IN do CO 1001 (minimo_educacao.sql) —
+   sai automaticamente do Quadro 21, pois o ramo de impostos do quadro exige
+   CO 1001 e a fonte do PT (100) não é FUNDEB.
+
+2. NDs excluídos no nível de DESDOBRAMENTO (8 dígitos): 31901195, 31901131,
+   31901125, 33903023 (constante ND8_EXCL_MDE no etl.py). Tratamento idêntico
+   ao do Quadro 20:
+   - DOTAÇÃO ATUALIZADA: abate do EMPENHADO acumulado das fatias — é a origem
+     dos centavos das dotações oficiais 21.2 = 4.802.056.566,39 e
+     21.5 = 996.693.857,01.
+   - EXECUÇÃO (empenhadas/liquidadas/pagas): fatia dentro da base do quadro
+     não é somada; fatia fora da base é subtraída.
+   - PARTICULARIDADE do Quadro 21: as fatias das fontes 1021/1002 (FR 1540)
+     já integram a base via FUNDEB (FR X540), então aqui basta não somá-las —
+     diferente do Quadro 20, onde estão fora da base (FR 500/502/718) e
+     precisam ser subtraídas. A lógica do etl.py (base do quadro × fatia ND8)
+     resolve os dois casos sem regra adicional.
+   - UNIVERSO do abate: toda fatia ND8 dentro do CO 1001 (fonte resumida),
+     sem filtro de COFONTEFEDERAL e sem lista fixa de fontes.
+
+QUADRO APURAÇÃO DAS DESPESAS PARA FINS DE LIMITE MÍNIMO CONSTITUCIONAL
+======================================================================
+
+22- TOTAL DAS DESPESAS DE MDE CUSTEADAS COM RECURSOS DE IMPOSTOS = L20(d ou e): L20(d ou e)									
+23- TOTAL DAS RECEITAS TRANSFERIDAS AO FUNDEB = (L4): L4									
+24- (-) RECEITAS DO FUNDEB NÃO UTILIZADAS NO EXERCÍCIO, EM VALOR SUPERIOR A 10% = L18(q): L18(q)									
+25- (-) SUPERÁVIT PERMITIDO NO EXERCÍCIO IMEDIATAMENTE ANTERIOR NÃO APLICADO ATÉ O PRIMEIRO QUADRIMESTRE DO EXERCÍCIO ATUAL = L19(x): L19(x)									
+26- (-) RESTOS A PAGAR NÃO PROCESSADOS INSCRITOS NO EXERCÍCIO SEM DISPONIBILIDADE FINANCEIRA DE RECURSOS DE IMPOSTOS: informado somente no último bimestre									
+27- (-) CANCELAMENTO, NO EXERCÍCIO, DE RESTOS A PAGAR INSCRITOS COM DISPONIBILIDADE FINANCEIRA DE RECURSOS DE IMPOSTOS VINCULADOS AO ENSINO = (L30.1(af)): (L30.1(af)): 									
+28- TOTAL DAS DESPESAS PARA FINS DE LIMITE  (22 + 23 - 24 - 25 - 26 - 27): Resultado da fórmula (22 + 23 - 24 - 25 - 26 - 27)	
+
+QUADRO APURAÇÃO DO LIMITE MÍNIMO CONSTITUCIONAL
+===============================================
+
+VALOR EXIGIDO (z)
+29- APLICAÇÃO EM MDE SOBRE A RECEITA RESULTANTE DE IMPOSTOS:  [25% de L3 ou (L4 + L5)]
+VALOR APLICADO (aa) 
+29- APLICAÇÃO EM MDE SOBRE A RECEITA RESULTANTE DE IMPOSTOS: L28
+% APLICADO (ab)
+29- APLICAÇÃO EM MDE SOBRE A RECEITA RESULTANTE DE IMPOSTOS: L28/L3 * 100
+
+
+QUADRO RESTOS A PAGAR INSCRITOS EM EXERCÍCIOS ANTERIORES DE DESPESAS CONSIDERADAS PARA CUMPRIMENTO DO LIMITE
+============================================================================================================
+
+COLUNAS:
+
+SALDO INICIAL (ac): COCONTACONTABIL IN (531100000, 531200000, 532100000, 532200000); INMES = 0; SALDO
+RP LIQUIDADOS (ad) = (ae) + saldo das contas 631300000,631810000; INMES <> 0; SALDO
+RP PAGOS (ae): COCONTACONTABIL IN (631400000,631820000,632210100,632210200,632210300,632210400); INMES <> 0; SALDO
+RP CANCELADOS (af): COCONTACONTABIL IN (631900000,632900000); INMES <> 0; SALDO
+SALDO FINAL (ag) = (ac) - (ae) - (af)
+
+LINHAS:
+
+30- RESTOS A PAGAR DE DESPESAS COM MDE: Somatório dos itens 30.1 + 30.2 + 30.3
+   30.1 - Executadas com Recursos de Impostos e Transferências de Impostos: FR: X500 + FR: X502 + FR: X718; CO: 1001; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + ND: 40000000
+   30.2 - Executadas com Recursos do FUNDEB - Impostos: FR: X540; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + ND: 40000000
+   30.3 - Executadas com Recursos do FUNDEB - Complementação da União (VAAT + VAAF + VAAR): FR: X541 + X542 + X543; ND: 30000000(-) ND: 31900100(-) ND: 31900300(-) + ND: 40000000
+
+
+DIFERENÇAS CONHECIDAS E ACEITAS — coluna SALDO INICIAL (ac) — 1º bim/2026
+(investigadas e documentadas em 2026-06-13; (ad)/(ae)/(af) batem ao centavo):
+
+                  OFICIAL          DASH            DIFF
+   30.1:    430.871.501,58   426.987.510,71   +3.883.990,87 (0,9%)
+   30.2:    236.546.075,09   236.311.858,31     +234.216,78 (0,1%)
+   30.3:              0,00           79,40         -79,40    (residual)
+
+A escolha das contas NÃO é a causa: as contas classe 5 (531100000/532100000/
+532200000) e as classe 6 espelho (631100000/632110100/632110300) dão o MESMO
+total no inmes=0 (testado). As causas, por linha:
+
+- 30.1 (+3,88M): 100% atribuível à LISTA DE EXCLUSÃO DE PTs do CO=1001 (a mesma
+  do Quadro 20). Sobre as contas de inscrição de RP (inmes=0, fonte 500/502/718)
+  a lista remove 15.827.391,35 (10 PTs); sem ela o valor seria 442.814.902,06
+  (alto demais). O oficial só exclui ~11,94M — sobre-excluímos 3,88M. A lista foi
+  calibrada contra a LOA 2026 (ano corrente); os RP foram inscritos em exercícios
+  ANTERIORES, com estrutura de PT diferente, então a lista não mapeia 1:1. Os
+  3,88M NÃO formam subconjunto limpo dos 10 PTs (programas antigos 2964/1850) →
+  é diferença metodológica (o oficial parte do fechamento do RREO do ano
+  anterior), não um "manter PT X". Corrigir exigiria a metodologia oficial de RP.
+
+- 30.2 (+234K) e 30.3 (-79,40): SEM CO (classificação pura por fonte). Seleção de
+  contas provadamente completa (não existe fonte 546 nessas contas; nenhuma outra
+  fonte/natureza explica). Refletem ajustes INTER-EXERCÍCIOS: diferença entre o
+  saldo contábil de abertura (saldocontabil_ex inmes=0) e o saldo inicial
+  publicado no RREO oficial (que vem do fechamento de RP do exercício anterior).
+
+Decisão do usuário (2026-06-13): DEIXAR COMO ESTÁ — diferenças pequenas, (ac) é a
+única coluna divergente, e a reconciliação depende da base de exercício anterior
+do oficial, não dedutível dos dados do ano corrente.
+

@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mínimo da Educação – MDE | GDF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --radius:12px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.1);
+  --accent-900:#1b5e20;--accent-700:#006633;--accent-500:#43a047;
+  --accent-200:#c8e6c9;--accent-100:#e8f5e9;--accent-50:#f1f8e9;
+  --green-600:#16a34a;--green-100:#dcfce7;--green-900:#14532d;
+  --red-600:#dc2626;--red-100:#fee2e2;--red-900:#991b1b;
+  --yellow-600:#d97706;--yellow-100:#fef3c7;--yellow-900:#78350f;
+  --blue-600:#2563eb;--blue-100:#dbeafe;--blue-900:#1e3a8a;
+  --gradient:linear-gradient(135deg,#1b5e20 0%,#006633 40%,#2e7d32 100%);
+}
+html{font-size:14px}
+body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1e293b;min-height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+.header{background:var(--gradient);color:#fff;padding:16px 28px;display:flex;align-items:center;gap:20px;box-shadow:var(--shadow-lg);flex-shrink:0}
+.header img{height:52px;flex-shrink:0}
+.header img[hidden]{display:none}
+.header-info{flex:1;min-width:0}
+.header-info h1{font-size:1rem;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subtitle{font-size:.75rem;opacity:.75;margin-top:2px}
+.data-atualizacao{font-size:.7rem;opacity:.75;margin-top:3px}
+.btn-back{display:flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;color:#fff;text-decoration:none;font-size:.75rem;font-weight:600;transition:all .15s;flex-shrink:0;white-space:nowrap}
+.btn-back:hover{background:rgba(255,255,255,.25)}
+
+/* Content */
+.content{flex:1;padding:20px 28px;display:flex;flex-direction:column;gap:16px}
+
+/* KPI cards */
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap}
+.kpi-card{background:#fff;border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);border-left:4px solid #cbd5e1;transition:box-shadow .2s,transform .2s;flex:1;min-width:170px}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-card.neutral{border-left-color:#cbd5e1}
+.kpi-card.ok{border-left-color:var(--green-600)}
+.kpi-card.warn{border-left-color:var(--yellow-600)}
+.kpi-card.blue{border-left-color:var(--blue-600)}
+.kpi-card.destaque{border:2px solid var(--accent-700);background:var(--green-100)}
+.kpi-label{font-size:.64rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+.kpi-card.destaque .kpi-label{color:var(--green-900)}
+.kpi-value{font-size:1.15rem;font-weight:800;line-height:1.1;color:#1e293b}
+.kpi-card.destaque .kpi-value{color:var(--green-900);font-size:1.4rem}
+.kpi-sub{font-size:.62rem;color:#64748b;margin-top:3px}
+
+/* Seletor de bimestre */
+.bim-bar{display:flex;gap:8px;flex-wrap:wrap}
+.bim-btn{font-family:inherit;font-size:.72rem;font-weight:600;padding:7px 14px;border-radius:8px;border:2px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;transition:all .15s;white-space:nowrap}
+.bim-btn:hover{border-color:var(--accent-500);color:var(--accent-700)}
+.bim-btn.active{border-color:var(--accent-700);background:var(--accent-700);color:#fff}
+.bim-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* Main layout */
+.tabelas-col{display:flex;flex-direction:column;gap:16px}
+
+/* Table panels */
+.table-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.table-panel-header{padding:11px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px}
+.table-panel-header h3{font-size:.78rem;font-weight:700;color:var(--accent-900);text-align:center}
+.table-wrap{overflow-x:auto}
+table.dem{width:100%;border-collapse:collapse;font-size:.72rem}
+table.dem th{background:var(--accent-50);color:var(--accent-900);text-align:center;padding:7px 6px;border-bottom:2px solid var(--accent-200);font-size:.62rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+table.dem th.left{text-align:left;padding-left:10px}
+table.dem td{padding:4px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap}
+table.dem td.name{text-align:left;white-space:normal;min-width:280px;max-width:500px;padding-left:10px}
+table.dem td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dem td.total{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;background:#f8fafc}
+table.dem td.pct{text-align:right;font-variant-numeric:tabular-nums;color:#475569}
+tr.n0 td{background:var(--accent-100);font-weight:700;font-size:.74rem;color:var(--accent-900)}
+tr.n1 td{background:var(--accent-50);font-weight:600}
+tr.n2 td{font-weight:400;color:#475569}
+tr.sep td{height:4px;background:#f1f5f9;padding:0;border:none}
+tr.res td{font-weight:800;font-size:.75rem;background:#f8fafc}
+tr.res.ok td{background:var(--green-100);color:var(--green-900)}
+tr.res.warn td{background:var(--yellow-100);color:var(--yellow-900)}
+tr.res.blue td{background:var(--blue-100);color:var(--blue-900)}
+tr.res.neutral td{background:#f8fafc;color:#475569}
+tr:not(.sep):not(.res):not(.n0):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!important}
+.ind1{padding-left:20px!important}
+.ind2{padding-left:36px!important}
+.num-neg{color:var(--red-600)}
+
+/* Linhas de indicador percentual */
+tr.ind-ok td{background:var(--green-100);color:var(--green-900);font-weight:700}
+tr.ind-nok td{background:var(--red-100);color:var(--red-900);font-weight:700}
+tr.ind-neutral td{background:#f8fafc;color:#475569;font-weight:700}
+
+/* Footer */
+.footer{text-align:center;padding:14px 28px;font-size:.67rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6}
+
+/* Responsive */
+@media(max-width:900px){.kpi-row{gap:10px}}
+@media(max-width:600px){.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}.kpi-card{min-width:calc(50% - 6px)}}
+@media print{.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}.kpi-card,.table-panel{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:sans-serif;font-size:1rem;color:#555;flex-direction:column;gap:12px">
+  <div style="font-size:2rem">&#9203;</div>
+  <div>Carregando dados&#8230;</div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <img id="brasao" alt="Brasão do DF">
+  <div class="header-info">
+    <h1>Mínimo da Educação – MDE</h1>
+    <div class="subtitle">Arts. 212 e 212-A da Constituição Federal — Governo do Distrito Federal</div>
+    <div class="data-atualizacao" id="data-atualizacao">Carregando…</div>
+  </div>
+  <a href="../minimos_constitucionais/" class="btn-back">&#8592; Voltar</a>
+</header>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card neutral" id="kpi-imp">
+      <div class="kpi-label">Receita de Impostos Realizada</div>
+      <div class="kpi-value" id="kv-imp">—</div>
+      <div class="kpi-sub" id="ks-imp">Linha 1</div>
+    </div>
+    <div class="kpi-card neutral" id="kpi-transf">
+      <div class="kpi-label">Transferências Realizadas</div>
+      <div class="kpi-value" id="kv-transf">—</div>
+      <div class="kpi-sub" id="ks-transf">Linha 2</div>
+    </div>
+    <div class="kpi-card neutral" id="kpi-total">
+      <div class="kpi-label">Total Receita de Impostos (Linha 3)</div>
+      <div class="kpi-value" id="kv-total">—</div>
+      <div class="kpi-sub" id="ks-total">Linhas 1 + 2</div>
+    </div>
+    <div class="kpi-card neutral" id="kpi-fundeb20">
+      <div class="kpi-label">Destinado ao FUNDEB — 20% (Linha 4)</div>
+      <div class="kpi-value" id="kv-fundeb20">—</div>
+      <div class="kpi-sub">20% × base constitucional</div>
+    </div>
+    <div class="kpi-card neutral" id="kpi-minimo">
+      <div class="kpi-label">Mínimo além FUNDEB (Linha 5)</div>
+      <div class="kpi-value" id="kv-minimo">—</div>
+      <div class="kpi-sub">5% × base + 25% × outros impostos</div>
+    </div>
+    <div class="kpi-card destaque" id="kpi-fundrec">
+      <div class="kpi-label">Total FUNDEB Recebido (Linha 6)</div>
+      <div class="kpi-value" id="kv-fundrec">—</div>
+      <div class="kpi-sub" id="ks-fundrec">6.1 a 6.4</div>
+    </div>
+  </div>
+
+  <!-- Seletor de bimestre -->
+  <div class="bim-bar" id="bim-bar"></div>
+
+  <!-- Tables -->
+  <div class="tabelas-col">
+
+      <!-- Quadro 1: Receita Resultante de Impostos -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>RECEITA RESULTANTE DE IMPOSTOS (Arts. 212 e 212-A da Constituição Federal)</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-rec"></thead>
+            <tbody id="tbody-rec"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 2: FUNDEB -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>FUNDEB — Receitas do Exercício Recebidas</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-fund"></thead>
+            <tbody id="tbody-fund"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 2b: Linhas 8-9 — Superávit de Exercícios Anteriores -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>RECURSOS RECEBIDOS EM EXERCÍCIOS ANTERIORES E NÃO UTILIZADOS (SUPERÁVIT)</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-superavit"></thead>
+            <tbody id="tbody-superavit"></tbody>
+          </table>
+        </div>
+      </div>
+
+
+      <!-- Quadro 4: FUNDEB por Subfunção -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>DESPESAS COM RECURSOS DO FUNDEB (Por Subfunção)</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-fundeb-sub"></thead>
+            <tbody id="tbody-fundeb-sub"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 5: Indicadores do FUNDEB — linhas 11 a 14 -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>INDICADORES DO FUNDEB</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-ind-fundeb"></thead>
+            <tbody id="tbody-ind-fundeb"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 6: Indicadores percentuais — linhas 15 a 18 -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>INDICADORES — Art. 212-A, inciso XI e § 3º CF / Art. 25 § 3º Lei 14.113/2020</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-ind-pct"></thead>
+            <tbody id="tbody-ind-pct"></tbody>
+          </table>
+        </div>
+        <div style="padding:6px 16px 10px;font-size:.62rem;color:#94a3b8;line-height:1.6">
+          * Nos 5 primeiros bimestres: base = despesa <b>liquidada</b> (e). No 6º bimestre (nov–dez): base = despesa <b>empenhada</b> (d).
+        </div>
+      </div>
+
+      <!-- Quadro 6b: Linha 18 — Máximo de 10% de Superávit -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>INDICADOR — Art. 25, § 3º — Lei nº 14.113/2020 — (Máximo de 10% de Superávit)</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-ind-l18"></thead>
+            <tbody id="tbody-ind-l18"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 6c: Linhas 19/19.1/19.2 — Aplicação do Superávit de Exercício Anterior -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>INDICADOR — Art. 25, § 3º — Lei nº 14.113/2020 — (Aplicação do Superávit de Exercício Anterior)</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-ind-l19"></thead>
+            <tbody id="tbody-ind-l19"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 7: Linha 20 — Despesas MDE custeadas com Receitas de Impostos -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>DESPESAS COM AÇÕES TÍPICAS DE MDE — RECEITAS DE IMPOSTOS — EXCETO FUNDEB (Por Subfunção)</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-q20"></thead>
+            <tbody id="tbody-q20"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 8: Linha 21 — Despesas MDE custeadas com Receitas de Impostos e FUNDEB -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>DESPESAS COM AÇÕES TÍPICAS DE MDE, RECEITAS DE IMPOSTOS E RECURSOS DO FUNDEB (Por Área de Atuação)</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-q21"></thead>
+            <tbody id="tbody-q21"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 9: Linhas 22-28 — Apuração das Despesas para Fins de Limite -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>APURAÇÃO DAS DESPESAS PARA FINS DE LIMITE MÍNIMO CONSTITUCIONAL</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-q22-28"></thead>
+            <tbody id="tbody-q22-28"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 10: Linha 29 — Apuração do Limite Mínimo Constitucional -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>APURAÇÃO DO LIMITE MÍNIMO CONSTITUCIONAL</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-q29"></thead>
+            <tbody id="tbody-q29"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quadro 11: Linha 30 — Restos a Pagar inscritos em exercícios anteriores -->
+      <div class="table-panel">
+        <div class="table-panel-header">
+          <h3>RESTOS A PAGAR INSCRITOS EM EXERCÍCIOS ANTERIORES DE DESPESAS CONSIDERADAS PARA CUMPRIMENTO DO LIMITE</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="dem">
+            <thead id="thead-q30"></thead>
+            <tbody id="tbody-q30"></tbody>
+          </table>
+        </div>
+      </div>
+
+  </div><!-- /tabelas-col -->
+
+</div><!-- /content -->
+
+<div class="footer">
+  FONTE: SIAC — Sistema Integrado de Administração Financeira e Contábil<br>
+  Unidade de Informações Fiscais / Contadoria Geral do DF / SEFIN / SEEC
+</div>
+
+<script>
+// ─── Utilitários ───────────────────────────────────────────────────────────
+var MESES_NOME = {1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',
+                  7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+var MESES_ABR  = {1:'jan',2:'fev',3:'mar',4:'abr',5:'mai',6:'jun',
+                  7:'jul',8:'ago',9:'set',10:'out',11:'nov',12:'dez'};
+var BIM_LABELS = {
+  1:'1º Bimestre (jan–fev)',
+  2:'2º Bimestre (jan–abr)',
+  3:'3º Bimestre (jan–jun)',
+  4:'4º Bimestre (jan–ago)',
+  5:'5º Bimestre (jan–out)',
+  6:'6º Bimestre (jan–dez)',
+};
+var curBim = 1;
+
+function fmtNum(v){
+  if(v===null||v===undefined||isNaN(v)) return '—';
+  var n=Number(v);
+  if(n<0) return '<span class="num-neg">('+(-n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+')</span>';
+  return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtBi(v){
+  if(v===null||v===undefined||isNaN(v)) return '—';
+  var n=Number(v);
+  var abs=Math.abs(n);
+  var s=(n<0?'- ':'');
+  if(abs>=1e9)  return s+(abs/1e9).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' bi';
+  if(abs>=1e6)  return s+(abs/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' mi';
+  if(abs>=1e3)  return s+(abs/1e3).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' mil';
+  return s+abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtPct(v){
+  if(v===null||v===undefined||isNaN(v)) return '—';
+  return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+}
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Fetch ─────────────────────────────────────────────────────────────────
+function fetchJsonGz(url){
+  return fetch(url).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var ds=new DecompressionStream('gzip');
+    return new Response(r.body.pipeThrough(ds)).text();
+  }).then(function(t){return JSON.parse(t);});
+}
+var SUPA_URL='https://otrlwfdtdrqpynemoexj.supabase.co';
+var SUPA_KEY='sb_publishable_UKK5VWsrCXd1_zRR8tP16g_vySXJN5a';
+function fetchSupabase(){
+  var ano=new Date().getFullYear();
+  return fetch(SUPA_URL+'/rest/v1/minimo_educacao?select=dados,atualizado_em&ano=eq.'+ano,{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  }).then(function(r){
+    if(!r.ok) throw new Error('Supabase HTTP '+r.status);
+    return r.json();
+  }).then(function(rows){
+    if(!rows||!rows.length) throw new Error('Supabase: sem dados para '+ano);
+    var json=rows[0].dados;
+    json.atualizado_em=rows[0].atualizado_em;
+    return json;
+  });
+}
+
+// ─── Estado global ─────────────────────────────────────────────────────────
+var D = null;
+var overlay = document.getElementById('overlay');
+
+// ─── Cálculos MDE ──────────────────────────────────────────────────────────
+// Base FUNDEB (Linha 4): (1.1)+(1.2)+(1.3)+(2.1)+(2.2)+(2.3)+(2.4)+(2.6)
+//   = icms_principal + icms_adicional + itcd + ipva + fpe + fpm + ipi_exp + itr + outras_transf
+// Linha 4 = 20% × base_fundeb
+// Linha 5 = 5% × base_fundeb + 25% × [(1.4)+(1.5)+(1.6)+(1.7)+(1.8)+(2.5)]
+//          = 5% × base_fundeb + 25% × (iptu+itbi+iss+irrf+outros_impostos+iof_ouro)
+function calcBase1(r){
+  // Parcela que vai ao FUNDEB
+  return (r.icms_principal||0)+(r.icms_adicional||0)+(r.itcd||0)+(r.ipva||0)
+       + (r.fpe||0)+(r.fpm||0)+(r.ipi_exp||0)+(r.itr||0)+(r.outras_transf||0);
+}
+function calcBase2(r){
+  // Parcela que não vai ao FUNDEB (25% MDE extra)
+  return (r.iptu||0)+(r.itbi||0)+(r.iss||0)+(r.irrf||0)+(r.outros_impostos||0)+(r.iof_ouro||0);
+}
+function calcFundeb20(r){ return calcBase1(r)*0.20; }
+function calcMinimo(r)  { return calcBase1(r)*0.05 + calcBase2(r)*0.25; }
+// Linha 1 = impostos próprios: 1.1 a 1.8
+function calcL1(r){
+  return (r.icms_principal||0)+(r.icms_adicional||0)+(r.itcd||0)+(r.ipva||0)
+       + (r.iptu||0)+(r.itbi||0)+(r.iss||0)+(r.irrf||0)+(r.outros_impostos||0);
+}
+// Linha 2 = transferências: 2.1 a 2.6
+function calcL2(r){
+  return (r.fpe||0)+(r.fpm||0)+(r.ipi_exp||0)+(r.itr||0)+(r.iof_ouro||0)+(r.outras_transf||0);
+}
+// Linha 3 = Total (1+2)
+function calcL3(r){ return calcL1(r)+calcL2(r); }
+// Linha 7 = 6.1.1 (Principal FUNDEB impostos) − Linha 4 (20% base)
+function calcL7(f, r){ return (f.f61_principal||0) - calcFundeb20(r); }
+// Total FUNDEB
+function sumFundeb(f){
+  return (f.f61_principal||0)+(f.f61_rend_aplic||0)+(f.f61_ressarc||0)
+       + (f.f62_principal||0)+(f.f62_rend_aplic||0)+(f.f62_ressarc||0)
+       + (f.f63_principal||0)+(f.f63_rend_aplic||0)+(f.f63_ressarc||0)
+       + (f.f64_principal||0)+(f.f64_rend_aplic||0)+(f.f64_ressarc||0);
+}
+
+// ─── Seletor de bimestre ────────────────────────────────────────────────────
+function maxBimestre(){
+  return Math.max(1, Math.floor((D.max_mes+1)/2));
+}
+function mesesDoBimestre(b){
+  var arr=[];
+  for(var m=1;m<=2*b;m++) arr.push(m);
+  return arr;
+}
+function setupBimBar(){
+  var bar=document.getElementById('bim-bar');
+  bar.innerHTML='';
+  var maxBim=maxBimestre();
+  for(var b=1;b<=6;b++){
+    var btn=document.createElement('button');
+    btn.className='bim-btn'+(b===curBim?' active':'');
+    btn.textContent=BIM_LABELS[b];
+    if(b>maxBim) btn.disabled=true;
+    btn.dataset.bim=b;
+    btn.onclick=(function(bb){return function(){selectBim(bb);};})(b);
+    bar.appendChild(btn);
+  }
+}
+function selectBim(b){
+  if(b>maxBimestre()) return;
+  curBim=b;
+  document.querySelectorAll('.bim-btn').forEach(function(btn){
+    btn.classList.toggle('active', Number(btn.dataset.bim)===b);
+  });
+  refresh();
+}
+
+// ─── Agregação dos meses selecionados ──────────────────────────────────────
+// Soma todos os meses selecionados em um único objeto, chave a chave.
+function aggData(meses, dataset){
+  var result = {};
+  meses.forEach(function(m){
+    var d = dataset[String(m)] || {};
+    Object.keys(d).forEach(function(k){ result[k] = (result[k]||0) + (d[k]||0); });
+  });
+  return result;
+}
+// Rótulo do período para o cabeçalho da coluna
+function labelPeriodo(meses){
+  if(!meses.length) return 'Realizadas';
+  var last = meses[meses.length-1];
+  if(meses.length === 1) return 'Realizadas até '+MESES_NOME[last];
+  return 'Realizadas até '+MESES_NOME[last]+' ('+meses.length+' meses)';
+}
+
+// ─── Renderização dos KPIs ─────────────────────────────────────────────────
+function renderKPIs(meses){
+  var r = aggData(meses, D.receita);
+  var f = aggData(meses, D.fundeb);
+  var last  = meses[meses.length-1];
+  var label = meses.length===1
+    ? 'Acumulado até '+MESES_NOME[last]
+    : meses.length+' meses acumulados (até '+MESES_NOME[last]+')';
+
+  document.getElementById('kv-imp').innerHTML    = fmtBi(calcL1(r));
+  document.getElementById('kv-transf').innerHTML = fmtBi(calcL2(r));
+  document.getElementById('kv-total').innerHTML  = fmtBi(calcL3(r));
+  document.getElementById('kv-fundeb20').innerHTML = fmtBi(calcFundeb20(r));
+  document.getElementById('kv-minimo').innerHTML   = fmtBi(calcMinimo(r));
+  document.getElementById('kv-fundrec').innerHTML  = fmtBi(sumFundeb(f));
+
+  document.getElementById('ks-imp').textContent    = label;
+  document.getElementById('ks-transf').textContent = label;
+  document.getElementById('ks-total').textContent  = label;
+  document.getElementById('ks-fundrec').textContent = label;
+}
+
+// ─── Tabela: Receita Resultante de Impostos ────────────────────────────────
+// ROWS_REC: [num, label, cssClass, fn_previsao(p), fn_real(r)]
+// fn_previsao e fn_real são idênticos; separados por clareza.
+var ROWS_REC = [
+  ['1',     'RECEITA DE IMPOSTOS',
+   'n0', calcL1, calcL1],
+  ['1.1',   'Receita Resultante do ICMS',
+   'n1', function(r){return (r.icms_principal||0)+(r.icms_adicional||0);}, function(r){return (r.icms_principal||0)+(r.icms_adicional||0);}],
+  ['1.1.1', 'ICMS — Principal e Encargos (Multas, Juros de Mora, Dívida Ativa e Outros Encargos)',
+   'n2', function(r){return r.icms_principal||0;}, function(r){return r.icms_principal||0;}],
+  ['1.1.2', 'Adicional de até 2% do ICMS destinado ao Fundo de Combate à Pobreza (ADCT, art. 82, §1°)',
+   'n2', function(r){return r.icms_adicional||0;}, function(r){return r.icms_adicional||0;}],
+  ['1.2',   'Receita Resultante do Imposto de Transmissão Causa Mortis e Doação de Bens e Direitos — ITCD',
+   'n1', function(r){return r.itcd||0;}, function(r){return r.itcd||0;}],
+  ['1.3',   'Receita Resultante do Imposto sobre a Propriedade de Veículos Automotores — IPVA',
+   'n1', function(r){return r.ipva||0;}, function(r){return r.ipva||0;}],
+  ['1.4',   'Receita Resultante do Imposto sobre a Propriedade Predial e Territorial Urbana — IPTU',
+   'n1', function(r){return r.iptu||0;}, function(r){return r.iptu||0;}],
+  ['1.5',   'Receita Resultante do Imposto sobre Transmissão Inter Vivos — ITBI',
+   'n1', function(r){return r.itbi||0;}, function(r){return r.itbi||0;}],
+  ['1.6',   'Receita Resultante do Imposto sobre Serviços de Qualquer Natureza — ISS',
+   'n1', function(r){return r.iss||0;}, function(r){return r.iss||0;}],
+  ['1.7',   'Receita Resultante do Imposto de Renda Retido na Fonte — IRRF',
+   'n1', function(r){return r.irrf||0;}, function(r){return r.irrf||0;}],
+  ['1.8',   'Receita de Outros Impostos',
+   'n1', function(r){return r.outros_impostos||0;}, function(r){return r.outros_impostos||0;}],
+  ['sep'],
+  ['2',     'RECEITA DE TRANSFERÊNCIAS CONSTITUCIONAIS E LEGAIS',
+   'n0', calcL2, calcL2],
+  ['2.1',   'Cota-Parte FPE',
+   'n1', function(r){return r.fpe||0;}, function(r){return r.fpe||0;}],
+  ['2.2',   'Cota-Parte FPM',
+   'n1', function(r){return r.fpm||0;}, function(r){return r.fpm||0;}],
+  ['2.3',   'Cota-Parte IPI-Exportação',
+   'n1', function(r){return r.ipi_exp||0;}, function(r){return r.ipi_exp||0;}],
+  ['2.4',   'Cota-Parte ITR',
+   'n1', function(r){return r.itr||0;}, function(r){return r.itr||0;}],
+  ['2.5',   'Cota-Parte IOF-Ouro',
+   'n1', function(r){return r.iof_ouro||0;}, function(r){return r.iof_ouro||0;}],
+  ['2.6',   'Outras Transf. ou Compensações Financeiras Provenientes de Impostos e Transferências Constitucionais',
+   'n1', function(r){return r.outras_transf||0;}, function(r){return r.outras_transf||0;}],
+  ['sep'],
+  ['3',     'TOTAL DA RECEITA RESULTANTE DE IMPOSTOS (1 + 2)',
+   'res neutral', calcL3, calcL3],
+  ['sep'],
+  ['4',     'TOTAL DESTINADO AO FUNDEB = 20% DE ((1.1)+(1.2)+(1.3)+(2.1)+(2.2)+(2.3)+(2.4)+(2.6))',
+   'res neutral', calcFundeb20, calcFundeb20],
+  ['5',     'VALOR MÍNIMO A SER APLICADO ALÉM DO VALOR DESTINADO AO FUNDEB: 5% DE ((1.1)+(1.2)+(1.3)+(2.1)+(2.2)+(2.3)+(2.4)+(2.6)) + 25% DE ((1.4)+(1.5)+(1.6)+(1.7)+(1.8)+(2.5))',
+   'res neutral', calcMinimo, calcMinimo],
+];
+
+function renderReceita(meses){
+  var p    = D.previsao || {};
+  var aggR = aggData(meses, D.receita);   // soma dos meses selecionados
+
+  // Cabeçalho — 3 colunas: nome | previsão | realizadas
+  var thead = document.getElementById('thead-rec');
+  thead.innerHTML = '<tr>'
+    + '<th class="left" style="min-width:340px">Receita Resultante de Impostos</th>'
+    + '<th style="min-width:130px">Previsão<br>Atualizada</th>'
+    + '<th style="min-width:150px">'+escHtml(labelPeriodo(meses))+'</th>'
+    + '</tr>';
+
+  // Linhas
+  var tbody = document.getElementById('tbody-rec');
+  var html  = '';
+  ROWS_REC.forEach(function(row){
+    if(row[0]==='sep'){
+      html += '<tr class="sep"><td colspan="3"></td></tr>';
+      return;
+    }
+    var num    = row[0];
+    var label  = row[1];
+    var level  = row[2];
+    var fnPrev = row[3];
+    var fnReal = row[4];
+
+    var dots = num.split('.').length;
+    var ind  = dots===2 ? ' ind1' : dots===3 ? ' ind2' : '';
+
+    html += '<tr class="'+level+'">'
+      + '<td class="name'+ind+'"><b style="color:#94a3b8;margin-right:6px">'+escHtml(num)+'</b>'+escHtml(label)+'</td>'
+      + '<td class="num">'+fmtNum(fnPrev(p))+'</td>'
+      + '<td class="num">'+fmtNum(fnReal(aggR))+'</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+// ─── Tabela: FUNDEB ────────────────────────────────────────────────────────
+// ROWS_FUND: [num, label, cssClass, fn_prev(fp), fn_real(f, r)]
+// fn_real recebe (fundeb_mes, receita_mes) para permitir calcular linha 7
+var ROWS_FUND = [
+  ['6',     'TOTAL DAS RECEITAS DO FUNDEB RECEBIDAS',
+   'n0',
+   function(fp){ return sumFundeb(fp); },
+   function(f,r){ return sumFundeb(f); }],
+  ['6.1',   'FUNDEB — Impostos e Transferências de Impostos',
+   'n1',
+   function(fp){ return (fp.f61_principal||0)+(fp.f61_rend_aplic||0)+(fp.f61_ressarc||0); },
+   function(f,r){ return (f.f61_principal||0)+(f.f61_rend_aplic||0)+(f.f61_ressarc||0); }],
+  ['6.1.1', 'Principal',
+   'n2',
+   function(fp){ return fp.f61_principal||0; },
+   function(f,r){ return f.f61_principal||0; }],
+  ['6.1.2', 'Rendimentos de Aplicação Financeira',
+   'n2',
+   function(fp){ return fp.f61_rend_aplic||0; },
+   function(f,r){ return f.f61_rend_aplic||0; }],
+  ['6.1.3', 'Ressarcimento de Recursos do FUNDEB',
+   'n2',
+   function(fp){ return fp.f61_ressarc||0; },
+   function(f,r){ return f.f61_ressarc||0; }],
+  ['6.2',   'FUNDEB — Complementação da União — VAAF',
+   'n1',
+   function(fp){ return (fp.f62_principal||0)+(fp.f62_rend_aplic||0)+(fp.f62_ressarc||0); },
+   function(f,r){ return (f.f62_principal||0)+(f.f62_rend_aplic||0)+(f.f62_ressarc||0); }],
+  ['6.2.1', 'Principal',
+   'n2',
+   function(fp){ return fp.f62_principal||0; },
+   function(f,r){ return f.f62_principal||0; }],
+  ['6.2.2', 'Rendimentos de Aplicação Financeira',
+   'n2',
+   function(fp){ return fp.f62_rend_aplic||0; },
+   function(f,r){ return f.f62_rend_aplic||0; }],
+  ['6.2.3', 'Ressarcimento de Recursos do FUNDEB',
+   'n2',
+   function(fp){ return fp.f62_ressarc||0; },
+   function(f,r){ return f.f62_ressarc||0; }],
+  ['6.3',   'FUNDEB — Complementação da União — VAAT',
+   'n1',
+   function(fp){ return (fp.f63_principal||0)+(fp.f63_rend_aplic||0)+(fp.f63_ressarc||0); },
+   function(f,r){ return (f.f63_principal||0)+(f.f63_rend_aplic||0)+(f.f63_ressarc||0); }],
+  ['6.3.1', 'Principal',
+   'n2',
+   function(fp){ return fp.f63_principal||0; },
+   function(f,r){ return f.f63_principal||0; }],
+  ['6.3.2', 'Rendimentos de Aplicação Financeira',
+   'n2',
+   function(fp){ return fp.f63_rend_aplic||0; },
+   function(f,r){ return f.f63_rend_aplic||0; }],
+  ['6.3.3', 'Ressarcimento de Recursos do FUNDEB',
+   'n2',
+   function(fp){ return fp.f63_ressarc||0; },
+   function(f,r){ return f.f63_ressarc||0; }],
+  ['6.4',   'FUNDEB — Complementação da União — VAAR',
+   'n1',
+   function(fp){ return (fp.f64_principal||0)+(fp.f64_rend_aplic||0)+(fp.f64_ressarc||0); },
+   function(f,r){ return (f.f64_principal||0)+(f.f64_rend_aplic||0)+(f.f64_ressarc||0); }],
+  ['6.4.1', 'Principal',
+   'n2',
+   function(fp){ return fp.f64_principal||0; },
+   function(f,r){ return f.f64_principal||0; }],
+  ['6.4.2', 'Rendimentos de Aplicação Financeira',
+   'n2',
+   function(fp){ return fp.f64_rend_aplic||0; },
+   function(f,r){ return f.f64_rend_aplic||0; }],
+  ['6.4.3', 'Ressarcimento de Recursos do FUNDEB',
+   'n2',
+   function(fp){ return fp.f64_ressarc||0; },
+   function(f,r){ return f.f64_ressarc||0; }],
+  ['sep'],
+  ['7',     'RESULTADO LÍQUIDO DAS TRANSFERÊNCIAS DO FUNDEB (6.1.1) — Linha 4',
+   'res blue',
+   function(fp){ return (fp.f61_principal||0) - calcFundeb20(D.previsao||{}); },
+   function(f,r){ return calcL7(f,r); }],
+];
+
+function renderSuperavit(meses){
+  var sv  = D.superavit || {};
+  // L8.1 / L8.2 — constantes manuais (config no etl.py)
+  var l81 = sv.l8_1 || 0;
+  var l82 = sv.l8_2 || 0;
+  var l8  = l81 + l82;
+
+  // L6: total FUNDEB recebido nos meses selecionados
+  var aggF = aggData(meses, D.fundeb);
+  var l6b  = sumFundeb(aggF);
+  var l9   = l6b + l8;
+
+  document.getElementById('thead-superavit').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:400px">Especificação</th>'
+    +'<th style="min-width:160px">Valor</th>'
+    +'</tr>';
+
+  var html = '';
+  html += '<tr class="n0"><td class="name"><b>8- TOTAL DOS RECURSOS DE SUPERÁVIT</b></td>'
+        +'<td class="num"><b>'+fmtNum(l8)+'</b></td></tr>';
+  html += '<tr class="n1"><td class="name ind1">'
+        +'<b style="color:#94a3b8;margin-right:6px">8.1</b>'
+        +'Superávit do Exercício Imediatamente Anterior</td>'
+        +'<td class="num">'+fmtNum(l81)+'</td></tr>';
+  html += '<tr class="n1"><td class="name ind1">'
+        +'<b style="color:#94a3b8;margin-right:6px">8.2</b>'
+        +'Superávit Residual de Outros Exercícios</td>'
+        +'<td class="num">'+fmtNum(l82)+'</td></tr>';
+  html += '<tr class="sep"><td colspan="2"></td></tr>';
+  html += '<tr class="n0"><td class="name">'
+        +'<b>9- TOTAL DOS RECURSOS DO FUNDEB DISPONÍVEIS PARA UTILIZAÇÃO (6 + 8)</b></td>'
+        +'<td class="num"><b>'+fmtNum(l9)+'</b></td></tr>';
+
+  document.getElementById('tbody-superavit').innerHTML = html;
+}
+
+function renderFundeb(meses){
+  var fp   = D.fundeb_previsao || {};
+  var aggF = aggData(meses, D.fundeb);    // soma dos meses selecionados — FUNDEB
+  var aggR = aggData(meses, D.receita);   // soma dos meses selecionados — Receita (para linha 7)
+
+  // Cabeçalho — sempre 3 colunas: nome | previsão | realizadas
+  var thead = document.getElementById('thead-fund');
+  thead.innerHTML = '<tr>'
+    + '<th class="left" style="min-width:340px">Receitas do FUNDEB</th>'
+    + '<th style="min-width:130px">Previsão<br>Atualizada</th>'
+    + '<th style="min-width:150px">'+escHtml(labelPeriodo(meses))+'</th>'
+    + '</tr>';
+
+  // Linhas
+  var tbody = document.getElementById('tbody-fund');
+  var html  = '';
+  ROWS_FUND.forEach(function(row){
+    if(row[0]==='sep'){
+      html += '<tr class="sep"><td colspan="3"></td></tr>';
+      return;
+    }
+    var num    = row[0];
+    var label  = row[1];
+    var level  = row[2];
+    var fnPrev = row[3];
+    var fnReal = row[4];
+
+    var dots = num.split('.').length;
+    var ind  = dots===2 ? ' ind1' : dots===3 ? ' ind2' : '';
+
+    var pval = fnPrev(fp);
+    var rval = fnReal(aggF, aggR);
+
+    html += '<tr class="'+level+'">'
+      + '<td class="name'+ind+'"><b style="color:#94a3b8;margin-right:6px">'+escHtml(num)+'</b>'+escHtml(label)+'</td>'
+      + '<td class="num">'+fmtNum(pval)+'</td>'
+      + '<td class="num">'+fmtNum(rval)+'</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+// ─── Despesas MDE ──────────────────────────────────────────────────────────
+// Rótulos de subfunção
+var SUBF_LABELS = {
+  '122':'Administração Geral',
+  '361':'Ensino Fundamental',
+  '362':'Ensino Médio',
+  '363':'Ensino Profissional',
+  '365':'Educação Infantil',
+  '366':'Educação de Jovens e Adultos',
+  '367':'Educação Especial',
+  'outras':'Outras',
+};
+// Ordem oficial do Quadro 10 (linhas x.x.1 a x.x.7 + outras)
+var Q10_SUB_ORDER = ['365','361','362','366','367','122','363','outras'];
+
+// ── Helpers de agregação ───────────────────────────────────────────────────
+// despesa[m]["1001"]         = {subfunc: {dot_atu, emp, liq, pago}}
+// despesa[m]["1070"][grupo]  = {subfunc: {dot_atu, emp, liq, pago}}
+// dot_atu é agora por mês — filtrado igual à execução pelo seletor de período
+
+function aggDesp1001(meses){
+  var r = {};
+  meses.forEach(function(m){
+    var d = (D.despesa && D.despesa[String(m)] && D.despesa[String(m)]['1001']) || {};
+    Object.keys(d).forEach(function(s){
+      if(!r[s]) r[s]={dot_atu:0, emp:0, liq:0, pago:0};
+      r[s].dot_atu += d[s].dot_atu ||0;
+      r[s].emp     += d[s].emp     ||0;
+      r[s].liq     += d[s].liq     ||0;
+      r[s].pago    += d[s].pago    ||0;
+    });
+  });
+  return r;
+}
+
+function aggDesp1070(meses, grupo){
+  var r = {};
+  meses.forEach(function(m){
+    var base = D.despesa && D.despesa[String(m)] && D.despesa[String(m)]['1070'];
+    var d = (base && base[grupo]) || {};
+    Object.keys(d).forEach(function(s){
+      if(!r[s]) r[s]={dot_atu:0, emp:0, liq:0, pago:0};
+      r[s].dot_atu += d[s].dot_atu ||0;
+      r[s].emp     += d[s].emp     ||0;
+      r[s].liq     += d[s].liq     ||0;
+      r[s].pago    += d[s].pago    ||0;
+    });
+  });
+  return r;
+}
+
+// Soma todos os valores de um campo em um dicionário de subfunções
+function sumField(obj, field){
+  return Object.values(obj).reduce(function(acc,v){ return acc+(v[field]||0); },0);
+}
+
+// Cabeçalho padrão das tabelas de despesa (5 colunas: nome + dotação + emp + liq + pago + RPNP)
+function thDesp5(labelEsq, meses, minWidth){
+  var last = meses.length ? meses[meses.length-1] : 0;
+  var ate  = last ? ' até '+MESES_NOME[last] : '';
+  return '<tr>'
+    +'<th class="left" style="min-width:'+(minWidth||340)+'px">'+escHtml(labelEsq)+'</th>'
+    +'<th style="min-width:120px">Dotação<br>Atualizada<br>(c)</th>'
+    +'<th style="min-width:120px">Empenhadas'+ate+'<br>(d)</th>'
+    +'<th style="min-width:120px">Liquidadas'+ate+'<br>(e)</th>'
+    +'<th style="min-width:120px">Pagas'+ate+'<br>(f)</th>'
+    +'<th style="min-width:110px">Inscritas em<br>RPNP<br>(g)</th>'
+    +'</tr>';
+}
+
+function numCols6(dot, emp, liq, pago, isTot){
+  var rpnp = emp - liq;   // empenhadas ainda não liquidadas = inscrito em RPNP
+  var c = isTot ? 'total' : 'num';
+  return '<td class="'+c+'">'+fmtNum(dot)+'</td>'
+        +'<td class="'+c+'">'+fmtNum(emp)+'</td>'
+        +'<td class="'+c+'">'+fmtNum(liq)+'</td>'
+        +'<td class="'+c+'">'+fmtNum(pago)+'</td>'
+        +'<td class="'+c+'">'+fmtNum(rpnp>0?rpnp:0)+'</td>';
+}
+
+
+// ─── Quadro 10: DESPESAS COM RECURSOS DO FUNDEB (Por Subfunção) ────────────
+function renderFundebSubfunc(meses){
+  var dProf = aggDesp1070(meses,'prof');
+  var dOutr = aggDesp1070(meses,'outras');
+
+  document.getElementById('thead-fundeb-sub').innerHTML = thDesp5('Especificação', meses, 340);
+
+  // Totalizadores
+  var totDot=0, totEmp=0, totLiq=0, totPago=0;
+  var tPDot=0,  tPEmp=0,  tPLiq=0,  tPPago=0;
+  var tODot=0,  tOEmp=0,  tOLiq=0,  tOPago=0;
+
+  // dot_atu agora vem do mesmo aggDesp (filtrado pelo seletor de mês)
+  function blocoLinhas(dMap, numBase){
+    var html='';
+    Q10_SUB_ORDER.forEach(function(s, i){
+      var dv  = dMap[s] || {dot_atu:0, emp:0, liq:0, pago:0};
+      var sub = numBase+'.'+(i+1)+'- '+escHtml(SUBF_LABELS[s]||s);
+      html += '<tr class="n2"><td class="name ind2">'+sub+'</td>'
+            + numCols6(dv.dot_atu, dv.emp, dv.liq, dv.pago)
+            + '</tr>';
+    });
+    return html;
+  }
+
+  // Totais de cada bloco
+  var Q10_ALL_KEYS = Q10_SUB_ORDER.concat(['transp']);
+  Q10_ALL_KEYS.forEach(function(s){
+    var dp  = dProf[s] || {dot_atu:0, emp:0, liq:0, pago:0};
+    var do_ = dOutr[s] || {dot_atu:0, emp:0, liq:0, pago:0};
+    tPDot+=dp.dot_atu;  tPEmp+=dp.emp;  tPLiq+=dp.liq;  tPPago+=dp.pago;
+    tODot+=do_.dot_atu; tOEmp+=do_.emp; tOLiq+=do_.liq; tOPago+=do_.pago;
+  });
+  totDot=tPDot+tODot; totEmp=tPEmp+tOEmp; totLiq=tPLiq+tOLiq; totPago=tPPago+tOPago;
+
+  var html='';
+  // Linha 10 — Total
+  html += '<tr class="n0"><td class="name"><b>10- TOTAL DAS DESPESAS COM RECURSOS DO FUNDEB</b></td>'
+        + numCols6(totDot, totEmp, totLiq, totPago, true)+'</tr>';
+
+  // Bloco 10.1 — Profissionais
+  html += '<tr class="n1"><td class="name ind1"><b>10.1- PROFISSIONAIS DA EDUCAÇÃO BÁSICA</b></td>'
+        + numCols6(tPDot, tPEmp, tPLiq, tPPago)+'</tr>';
+  html += blocoLinhas(dProf, '10.1');
+
+  html += '<tr class="sep"><td colspan="6"></td></tr>';
+
+  // Bloco 10.2 — Outras Despesas
+  html += '<tr class="n1"><td class="name ind1"><b>10.2- OUTRAS DESPESAS</b></td>'
+        + numCols6(tODot, tOEmp, tOLiq, tOPago)+'</tr>';
+  html += blocoLinhas(dOutr, '10.2');
+
+  // 10.2.x+1 — Transporte (Escolar) → subfunções 781-785 mapeadas em 'transp'
+  var dTransp = dOutr['transp'] || {dot_atu:0, emp:0, liq:0, pago:0};
+  html += '<tr class="n2"><td class="name ind2">10.2.'+(Q10_SUB_ORDER.length+1)+'- Transporte (Escolar)</td>'
+        + numCols6(dTransp.dot_atu, dTransp.emp, dTransp.liq, dTransp.pago)+'</tr>';
+
+  document.getElementById('tbody-fundeb-sub').innerHTML = html;
+}
+
+// ─── Quadro 5: Indicadores FUNDEB (linhas 11-14) ───────────────────────────
+function renderIndFundeb(meses){
+  // Agrega indicadores pelos meses selecionados
+  var ind = {};
+  var IND_KEYS = ['l11_540','l11_541','l11_542','l11_543','l12','l13','l14'];
+  IND_KEYS.forEach(function(k){ ind[k]={emp:0,liq:0,pago:0}; });
+  meses.forEach(function(m){
+    var src = (D.indicadores && D.indicadores[String(m)]) || {};
+    IND_KEYS.forEach(function(k){
+      var v = src[k]||{};
+      ind[k].emp  += v.emp  ||0;
+      ind[k].liq  += v.liq  ||0;
+      ind[k].pago += v.pago ||0;
+    });
+  });
+
+  // Linha 11 = soma 11.1+11.2+11.3+11.4
+  var l11={emp:0,liq:0,pago:0};
+  ['l11_540','l11_541','l11_542','l11_543'].forEach(function(k){
+    l11.emp+=ind[k].emp; l11.liq+=ind[k].liq; l11.pago+=ind[k].pago;
+  });
+
+  var last = meses.length ? meses[meses.length-1] : 0;
+  var ate  = last ? ' até '+MESES_NOME[last] : '';
+
+  document.getElementById('thead-ind-fundeb').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:480px">Especificação</th>'
+    +'<th style="min-width:130px">Despesas Empenhadas<br>no Exercício'+ate+'<br>(d)</th>'
+    +'<th style="min-width:130px">Despesas Liquidadas<br>no Exercício'+ate+'<br>(e)</th>'
+    +'<th style="min-width:130px">Despesas Pagas<br>no Exercício'+ate+'<br>(f)</th>'
+    +'<th style="min-width:130px">Inscritas em Restos<br>a Pagar Não<br>Processados (g)</th>'
+    +'</tr>';
+
+  function cols4(v, isTot){
+    var rpnp = Math.max(0, v.emp - v.liq);
+    var c = isTot ? 'total' : 'num';
+    return '<td class="'+c+'">'+fmtNum(v.emp)+'</td>'
+          +'<td class="'+c+'">'+fmtNum(v.liq)+'</td>'
+          +'<td class="'+c+'">'+fmtNum(v.pago)+'</td>'
+          +'<td class="'+c+'">'+fmtNum(rpnp)+'</td>';
+  }
+
+  var html='';
+  // Sub-título da seção — conforme PDF oficial
+  html += '<tr class="n0"><td class="name" colspan="5" style="font-size:.68rem;letter-spacing:.03em;text-align:center">'
+        +'DESPESAS CUSTEADAS COM RECEITAS DO FUNDEB RECEBIDAS NO EXERCÍCIO</td></tr>';
+
+  // Linha 11 — total e sub-linhas
+  html += '<tr class="n0"><td class="name"><b>11- TOTAL DAS DESPESAS CUSTEADAS COM RECURSOS DO FUNDEB RECEBIDAS NO EXERCÍCIO</b></td>'
+        + cols4(l11, true)+'</tr>';
+  html += '<tr class="n1"><td class="name ind1">11.1- Total das Despesas custeadas com FUNDEB — Impostos e Transferências de Impostos</td>'
+        + cols4(ind.l11_540)+'</tr>';
+  html += '<tr class="n1"><td class="name ind1">11.2- Total das Despesas custeadas com FUNDEB — Complementação da União — VAAF</td>'
+        + cols4(ind.l11_541)+'</tr>';
+  html += '<tr class="n1"><td class="name ind1">11.3- Total das Despesas custeadas com FUNDEB — Complementação da União — VAAT</td>'
+        + cols4(ind.l11_542)+'</tr>';
+  html += '<tr class="n1"><td class="name ind1">11.4- Total das Despesas custeadas com FUNDEB — Complementação da União — VAAR</td>'
+        + cols4(ind.l11_543)+'</tr>';
+  html += '<tr class="sep"><td colspan="5"></td></tr>';
+
+  // Linha 12
+  html += '<tr class="n0"><td class="name"><b>12- TOTAL DAS DESPESAS DO FUNDEB COM PROFISSIONAIS DA EDUCAÇÃO BÁSICA</b></td>'
+        + cols4(ind.l12, true)+'</tr>';
+  html += '<tr class="sep"><td colspan="5"></td></tr>';
+
+  // Linha 13
+  html += '<tr class="n0"><td class="name"><b>13- TOTAL DAS DESPESAS CUSTEADAS COM FUNDEB — COMPLEMENTAÇÃO DA UNIÃO — VAAT APLICADAS NA EDUCAÇÃO INFANTIL</b></td>'
+        + cols4(ind.l13, true)+'</tr>';
+
+  // Linha 14
+  html += '<tr class="n0"><td class="name"><b>14- TOTAL DAS DESPESAS CUSTEADAS COM FUNDEB — COMPLEMENTAÇÃO DA UNIÃO — VAAT APLICADAS EM DESPESA DE CAPITAL</b></td>'
+        + cols4(ind.l14, true)+'</tr>';
+
+  document.getElementById('tbody-ind-fundeb').innerHTML = html;
+}
+
+// ─── Quadro 6: Indicadores percentuais (linhas 15-18) ──────────────────────
+function renderIndicadoresPct(meses){
+  // Agrega fundeb e indicadores pelos meses selecionados
+  var aggF = aggData(meses, D.fundeb);
+
+  var IND_KEYS = ['l11_540','l11_541','l11_542','l11_543','l12','l13','l14'];
+  var ai = {};
+  IND_KEYS.forEach(function(k){ ai[k]={emp:0,liq:0,pago:0}; });
+  meses.forEach(function(m){
+    var src = (D.indicadores && D.indicadores[String(m)]) || {};
+    IND_KEYS.forEach(function(k){
+      var v = src[k]||{};
+      ai[k].emp  += v.emp  ||0;
+      ai[k].liq  += v.liq  ||0;
+      ai[k].pago += v.pago ||0;
+    });
+  });
+
+  // Regra "d ou e": 6º bimestre (nov-dez) → empenhadas; demais → liquidadas
+  var lastMes  = meses[meses.length-1];
+  var isUltBim = lastMes >= 11;
+  function dOuE(v){ return isUltBim ? v.emp : v.liq; }
+
+  // ── L6 ──
+  var l6b      = sumFundeb(aggF);
+  var l63b     = (aggF.f63_principal||0)+(aggF.f63_rend_aplic||0)+(aggF.f63_ressarc||0); // VAAT
+  var l64b     = (aggF.f64_principal||0)+(aggF.f64_rend_aplic||0)+(aggF.f64_ressarc||0); // VAAR
+  var l6SemVaar = l6b - l64b;
+
+  // ── L11 total ──
+  var l11Val = ['l11_540','l11_541','l11_542','l11_543']
+    .reduce(function(s,k){ return s + dOuE(ai[k]); }, 0);
+
+  // ── Linhas 15-17 ──
+  var l15j = l6SemVaar * 0.70;
+  var l15k = dOuE(ai.l12);
+  var l15l = l15k;  // - L12(h); h=0 no período corrente
+  var l15m = l6SemVaar > 0 ? l15l / l6SemVaar * 100 : null;
+  var ok15 = l15m !== null && l15m >= 70;
+
+  // Linha 16: IEI depende de índice externo publicado pelo MEC
+  // Para GDF (sem VAAT), l63b=0 → todas as colunas ficam "—"
+  var l16k = dOuE(ai.l13);
+  var l16l = l16k;
+  var l16m = l63b > 0 ? l16l / l63b * 100 : null;
+
+  var l17j = l63b * 0.15;
+  var l17k = dOuE(ai.l14);
+  var l17l = l17k;
+  var l17m = l63b > 0 ? l17l / l63b * 100 : null;
+
+  // ── Renderização ──
+  var last = meses.length ? meses[meses.length-1] : 0;
+  var ate  = last ? ' até '+MESES_NOME[last] : '';
+  var note = isUltBim ? ' (d)' : ' (e)';
+
+  // Tabela 15-17: colunas j k l m
+  document.getElementById('thead-ind-pct').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:480px">Indicador</th>'
+    +'<th style="min-width:140px">Valor Exigido<br>(j)</th>'
+    +'<th style="min-width:140px">Valor Aplicado'+note+'<br>(k)</th>'
+    +'<th style="min-width:140px">Valor Considerado<br>após Deduções (l)</th>'
+    +'<th style="min-width:80px">%<br>Aplicado (m)</th>'
+    +'</tr>';
+
+  function rowInd(num, label, j, k, l, m, cumprido){
+    var cls = m===null ? 'ind-neutral' : (cumprido ? 'ind-ok' : 'ind-nok');
+    var pctStr = m===null ? '—' : fmtPct(m);
+    return '<tr class="'+cls+'">'
+      +'<td class="name"><b style="color:#94a3b8;margin-right:6px">'+escHtml(num)+'</b>'+escHtml(label)+'</td>'
+      +'<td class="num">'+(j===null||j===0&&m===null ? '—' : fmtNum(j))+'</td>'
+      +'<td class="num">'+(k===0&&m===null ? '—' : fmtNum(k))+'</td>'
+      +'<td class="num">'+(l===0&&m===null ? '—' : fmtNum(l))+'</td>'
+      +'<td class="pct" style="font-weight:700">'+pctStr+'</td>'
+      +'</tr>';
+  }
+
+  var html = '';
+  // Separador visual
+  html += '<tr class="n0"><td class="name" colspan="5" style="font-size:.65rem;color:var(--accent-900);text-align:center">'
+        +'INDICADORES — Art. 212-A, inciso XI e § 3º — Constituição Federal</td></tr>';
+
+  html += rowInd('15',
+    'Mínimo de 70% do FUNDEB na Remuneração dos Profissionais da Educação Básica',
+    l15j, l15k, l15l, l15m, ok15);
+
+  html += rowInd('16',
+    'Percentual da Complementação da União ao FUNDEB — VAAT na Educação Infantil (IEI)',
+    l63b>0 ? null : null, l16k, l16l, l16m, l16m!==null && l16m>=0);
+
+  html += rowInd('17',
+    'Mínimo de 15% da Complementação da União ao FUNDEB — VAAT em Despesas de Capital',
+    l17j>0 ? l17j : null, l17k, l17l, l17m, l17m!==null && l17m>=15);
+
+  html += '<tr class="sep"><td colspan="5"></td></tr>';
+
+  document.getElementById('tbody-ind-pct').innerHTML = html;
+}
+
+function renderL18(meses){
+  var aggF     = aggData(meses, D.fundeb);
+  var IND_KEYS = ['l11_540','l11_541','l11_542','l11_543'];
+  var ai = {};
+  IND_KEYS.forEach(function(k){ ai[k]={emp:0,liq:0,pago:0}; });
+  meses.forEach(function(m){
+    var src = (D.indicadores && D.indicadores[String(m)]) || {};
+    IND_KEYS.forEach(function(k){
+      var v = src[k]||{};
+      ai[k].emp  += v.emp  ||0;
+      ai[k].liq  += v.liq  ||0;
+      ai[k].pago += v.pago ||0;
+    });
+  });
+
+  var lastMes  = meses[meses.length-1];
+  var isUltBim = lastMes >= 11;
+  function dOuE(v){ return isUltBim ? v.emp : v.liq; }
+
+  var l6b   = sumFundeb(aggF);
+  var l11Val = IND_KEYS.reduce(function(s,k){ return s + dOuE(ai[k]); }, 0);
+
+  var l18n = l6b * 0.10;
+  var l18o = Math.max(0, l6b - l11Val);
+  var l18p = l18o;  // + max(0, L11(h)-L11(i)); h=i=0 no período corrente
+  var l18q = Math.max(0, l18p - l18n);
+  var l18r = l6b > 0 ? l18p / l6b * 100 : null;
+
+  var last = meses.length ? meses[meses.length-1] : 0;
+  var ate  = last ? ' até '+MESES_NOME[last] : '';
+  var note = isUltBim ? ' (d)' : ' (e)';
+
+  document.getElementById('thead-ind-l18').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:380px">Especificação</th>'
+    +'<th style="min-width:140px">Valor Máximo<br>Permitido (n)</th>'
+    +'<th style="min-width:140px">Valor Não<br>Aplicado'+note+' (o)</th>'
+    +'<th style="min-width:140px">Valor Não Aplicado<br>Após Ajuste (p)</th>'
+    +'<th style="min-width:140px">Excedente ao<br>Máximo Permitido (q)</th>'
+    +'<th style="min-width:100px">%<br>Não Aplicado (r)</th>'
+    +'</tr>';
+
+  var cls18 = l18q > 0 ? 'ind-nok' : 'ind-ok';
+  var html = '<tr class="'+cls18+'">'
+    +'<td class="name"><b style="color:#94a3b8;margin-right:6px">18</b>'
+    +'TOTAL DA RECEITA RECEBIDA E NÃO APLICADA NO EXERCÍCIO</td>'
+    +'<td class="num">'+fmtNum(l18n)+'</td>'
+    +'<td class="num">'+fmtNum(l18o)+'</td>'
+    +'<td class="num">'+fmtNum(l18p)+'</td>'
+    +'<td class="num" style="font-weight:700">'+fmtNum(l18q)+'</td>'
+    +'<td class="pct" style="font-weight:700">'+(l18r===null ? '—' : fmtPct(l18r))+'</td>'
+    +'</tr>';
+
+  document.getElementById('tbody-ind-l18').innerHTML = html;
+}
+
+// ─── Quadro 6c: Linhas 19/19.1/19.2 — Aplicação do Superávit de Exercício Anterior ─
+function renderL19(){
+  var sv   = D.superavit || {};
+  var s191 = sv.ant   || 0;          // L19.1(s) — já calculado (= L8.1)
+  var s192 = sv.s_192 || 0;          // L19.2(s)
+  var s19  = s191 + s192;            // L19(s) total
+
+  var t191 = sv.t_191 || 0;          // L19.1(t) — config manual (L8 do RREO ant.)
+  var t192 = sv.t_192 || 0;          // L19.2(t) — config manual (L8 do RREO ant.)
+  var t19  = t191 + t192;            // L19(t) total
+
+  // (u),(v): pendentes de implementação no ETL
+  var u191 = sv.u_191 || 0, u192 = sv.u_192 || 0, u19 = u191 + u192;
+  var v191 = sv.v_191 || 0, v192 = sv.v_192 || 0, v19 = v191 + v192;
+  // (w) = MAX(0, t-u-v) ; (x) = MAX(0, t-u)
+  var w191 = sv.w_191 || 0, w192 = sv.w_192 || 0, w19 = w191 + w192;
+  var x191 = sv.x_191 || 0, x192 = sv.x_192 || 0, x19 = x191 + x192;
+
+  var PEND = '—';
+
+  document.getElementById('thead-ind-l19').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:460px">Especificação</th>'
+    +'<th style="min-width:130px">Valor de Superávit<br>Permitido no<br>Exercício Anterior (s)</th>'
+    +'<th style="min-width:130px">Valor Não Aplicado<br>no Exercício<br>Anterior (t)</th>'
+    +'<th style="min-width:130px">Valor Aplicado<br>até o 1º<br>Quadrimestre (u)</th>'
+    +'<th style="min-width:130px">Valor Aplicado<br>após o 1º<br>Quadrimestre (v)</th>'
+    +'<th style="min-width:130px">Total Não Aplicado<br>até o Final do<br>Exercício (w)</th>'
+    +'<th style="min-width:130px">Superávit Permitido<br>Não Aplicado até<br>o 1º Quad. Atual (x)</th>'
+    +'</tr>';
+
+  function row(num, label, s, t, u, v, w, x, isTot){
+    var cls = isTot ? 'total' : 'num';
+    var nm  = '<b style="color:#94a3b8;margin-right:6px">'+num+'</b>'+label;
+    return '<tr>'
+      +'<td class="name'+(isTot?' indent0':'')+'" style="'+(isTot?'':'padding-left:1.8em')+'">'
+      +nm+'</td>'
+      +'<td class="'+cls+'">'+fmtNum(s)+'</td>'
+      +'<td class="'+cls+'">'+fmtNum(t)+'</td>'
+      +'<td class="num pend">'+PEND+'</td>'
+      +'<td class="num pend">'+PEND+'</td>'
+      +'<td class="'+cls+'">'+fmtNum(w)+'</td>'
+      +'<td class="'+cls+'">'+fmtNum(x)+'</td>'
+      +'</tr>';
+  }
+
+  var html = row('19',
+    'Total das Despesas custeadas com Superávit do FUNDEB',
+    s19, t19, u19, v19, w19, x19, true);
+  html += row('19.1',
+    'FUNDEB — Impostos e Transferências de Impostos',
+    s191, t191, u191, v191, w191, x191, false);
+  html += row('19.2',
+    'FUNDEB — Complementação da União (VAAF + VAAT)',
+    s192, t192, u192, v192, w192, x192, false);
+
+  document.getElementById('tbody-ind-l19').innerHTML = html;
+}
+
+// ─── Quadro 7: Linha 20 — Despesas MDE (Receitas de Impostos, exceto FUNDEB) ─
+var Q20_ORDER = ['365','361','362','366','367','122','transp','outras'];
+var Q20_LABELS = {
+  '365':'Educação Infantil',
+  '361':'Ensino Fundamental',
+  '362':'Ensino Médio',
+  '366':'Educação de Jovens e Adultos',
+  '367':'Educação Especial',
+  '122':'Administração Geral',
+  'transp':'Transporte (Escolar)',
+  'outras':'Outras',
+};
+
+function aggQ20(meses){
+  var r = {};
+  meses.forEach(function(m){
+    var d = (D.q20 && D.q20[String(m)]) || {};
+    Object.keys(d).forEach(function(s){
+      if(!r[s]) r[s]={dot_atu:0,emp:0,liq:0,pago:0};
+      r[s].dot_atu += d[s].dot_atu ||0;
+      r[s].emp     += d[s].emp     ||0;
+      r[s].liq     += d[s].liq     ||0;
+      r[s].pago    += d[s].pago    ||0;
+    });
+  });
+  return r;
+}
+
+function renderQ20(meses){
+  var q = aggQ20(meses);
+
+  var last = meses.length ? meses[meses.length-1] : 0;
+  var ate  = last ? ' até '+MESES_NOME[last] : '';
+
+  document.getElementById('thead-q20').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:300px">Subfunção</th>'
+    +'<th style="min-width:120px">Dotação<br>Atualizada (c)</th>'
+    +'<th style="min-width:120px">Empenhadas'+ate+'<br>(d)</th>'
+    +'<th style="min-width:120px">Liquidadas'+ate+'<br>(e)</th>'
+    +'<th style="min-width:120px">Pagas'+ate+'<br>(f)</th>'
+    +'<th style="min-width:110px">Inscritas em<br>RPNP (g)</th>'
+    +'</tr>';
+
+  // Totais
+  var tot={dot_atu:0,emp:0,liq:0,pago:0};
+  Q20_ORDER.forEach(function(s){
+    var v=q[s]||{dot_atu:0,emp:0,liq:0,pago:0};
+    for(var f in tot) tot[f]+=v[f]||0;
+  });
+
+  var html='';
+  // Total (linha 20)
+  html += '<tr class="n0"><td class="name"><b>20- TOTAL DAS DESPESAS COM AÇÕES TÍPICAS DE MDE</b></td>'
+        + numCols6(tot.dot_atu, tot.emp, tot.liq, tot.pago, true)+'</tr>';
+  html += '<tr class="sep"><td colspan="6"></td></tr>';
+
+  // Linhas 20.1 a 20.8
+  Q20_ORDER.forEach(function(s, i){
+    var v = q[s]||{dot_atu:0,emp:0,liq:0,pago:0};
+    html += '<tr class="n1"><td class="name ind1">'
+          +'<b style="color:#94a3b8;margin-right:6px">20.'+(i+1)+'</b>'
+          +escHtml(Q20_LABELS[s]||s)+'</td>'
+          + numCols6(v.dot_atu, v.emp, v.liq, v.pago)+'</tr>';
+  });
+
+  document.getElementById('tbody-q20').innerHTML = html;
+}
+
+// ─── Quadro 8: Linha 21 — Despesas MDE (Receitas de Impostos e FUNDEB) ──────
+var Q21_ORDER = ['365','361','362','364','demais'];
+var Q21_LABELS = {
+  '365':'Educação Infantil',
+  '361':'Ensino Fundamental',
+  '362':'Ensino Médio',
+  '364':'Ensino Superior',
+  'demais':'Demais Áreas de Atuação',
+};
+
+function aggQ21(meses){
+  var r = {};
+  meses.forEach(function(m){
+    var d = (D.q21 && D.q21[String(m)]) || {};
+    Object.keys(d).forEach(function(s){
+      if(!r[s]) r[s]={dot_atu:0,emp:0,liq:0,pago:0};
+      r[s].dot_atu += d[s].dot_atu ||0;
+      r[s].emp     += d[s].emp     ||0;
+      r[s].liq     += d[s].liq     ||0;
+      r[s].pago    += d[s].pago    ||0;
+    });
+  });
+  return r;
+}
+
+function renderQ21(meses){
+  var q = aggQ21(meses);
+
+  var last = meses.length ? meses[meses.length-1] : 0;
+  var ate  = last ? ' até '+MESES_NOME[last] : '';
+
+  document.getElementById('thead-q21').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:300px">Área de Atuação</th>'
+    +'<th style="min-width:120px">Dotação<br>Atualizada (c)</th>'
+    +'<th style="min-width:120px">Empenhadas'+ate+'<br>(d)</th>'
+    +'<th style="min-width:120px">Liquidadas'+ate+'<br>(e)</th>'
+    +'<th style="min-width:120px">Pagas'+ate+'<br>(f)</th>'
+    +'<th style="min-width:110px">Inscritas em<br>RPNP (g)</th>'
+    +'</tr>';
+
+  // Totais
+  var tot={dot_atu:0,emp:0,liq:0,pago:0};
+  Q21_ORDER.forEach(function(s){
+    var v=q[s]||{dot_atu:0,emp:0,liq:0,pago:0};
+    for(var f in tot) tot[f]+=v[f]||0;
+  });
+
+  var html='';
+  // Total (linha 21)
+  html += '<tr class="n0"><td class="name"><b>21- TOTAL DAS DESPESAS COM AÇÕES TÍPICAS DE MDE (IMPOSTOS + FUNDEB)</b></td>'
+        + numCols6(tot.dot_atu, tot.emp, tot.liq, tot.pago, true)+'</tr>';
+  html += '<tr class="sep"><td colspan="6"></td></tr>';
+
+  // Linhas 21.1 a 21.5
+  Q21_ORDER.forEach(function(s, i){
+    var v = q[s]||{dot_atu:0,emp:0,liq:0,pago:0};
+    html += '<tr class="n1"><td class="name ind1">'
+          +'<b style="color:#94a3b8;margin-right:6px">21.'+(i+1)+'</b>'
+          +escHtml(Q21_LABELS[s]||s)+'</td>'
+          + numCols6(v.dot_atu, v.emp, v.liq, v.pago)+'</tr>';
+  });
+
+  document.getElementById('tbody-q21').innerHTML = html;
+}
+
+// ─── Quadro 9: Linhas 22-28 — Apuração das Despesas para Fins de Limite ────
+var Q30_LABELS = {
+  '30.1':'Executadas com Recursos de Impostos e Transferências de Impostos',
+  '30.2':'Executadas com Recursos do FUNDEB — Impostos',
+  '30.3':'Executadas com Recursos do FUNDEB — Complementação da União (VAAT+VAAF+VAAR)',
+};
+
+function aggQ30(meses){
+  // q30 é mensal no gz; ag (saldo final) = ac - ae - af sobre o agregado
+  var r = {};
+  var keys = ['30.1','30.2','30.3'];
+  keys.forEach(function(k){ r[k] = {ac:0,ad:0,ae:0,af:0,ag:0}; });
+  meses.forEach(function(m){
+    var src = (D.q30 && D.q30[String(m)]) || {};
+    keys.forEach(function(k){
+      var v = src[k]||{};
+      r[k].ac += v.ac||0;
+      r[k].ad += v.ad||0;
+      r[k].ae += v.ae||0;
+      r[k].af += v.af||0;
+    });
+  });
+  keys.forEach(function(k){ r[k].ag = r[k].ac - r[k].ae - r[k].af; });
+  return r;
+}
+
+function renderQ22a28(meses){
+  var lastMes  = meses.length ? meses[meses.length-1] : 0;
+  var isUltBim = lastMes >= 11; // 6º bimestre (nov-dez): empenhadas; demais: liquidadas
+
+  // L22 = TOTAL L20 (d ou e)
+  var q20 = aggQ20(meses);
+  var tot20 = {dot_atu:0,emp:0,liq:0,pago:0};
+  Q20_ORDER.forEach(function(s){
+    var v=q20[s]||{dot_atu:0,emp:0,liq:0,pago:0};
+    for(var f in tot20) tot20[f]+=v[f]||0;
+  });
+  var l22 = isUltBim ? tot20.emp : tot20.liq;
+
+  // L23 = L4 (Total destinado ao FUNDEB = 20% da base)
+  var r    = aggData(meses, D.receita);
+  var l23  = calcFundeb20(r);
+
+  // L24 = L18(q)
+  var aggF  = aggData(meses, D.fundeb);
+  var ai = {};
+  var IND_KEYS_LOCAL = ['l11_540','l11_541','l11_542','l11_543'];
+  IND_KEYS_LOCAL.forEach(function(k){ ai[k]={emp:0,liq:0,pago:0}; });
+  meses.forEach(function(m){
+    var src = (D.indicadores && D.indicadores[String(m)]) || {};
+    IND_KEYS_LOCAL.forEach(function(k){
+      var v = src[k]||{};
+      ai[k].emp  += v.emp  ||0;
+      ai[k].liq  += v.liq  ||0;
+      ai[k].pago += v.pago ||0;
+    });
+  });
+  function dOuE(v){ return isUltBim ? v.emp : v.liq; }
+  var l6b    = sumFundeb(aggF);
+  var l11Val = IND_KEYS_LOCAL.reduce(function(s,k){ return s + dOuE(ai[k]); }, 0);
+  var l18n   = l6b * 0.10;
+  var l18o   = Math.max(0, l6b - l11Val);
+  var l18p   = l18o;
+  var l18q   = Math.max(0, l18p - l18n);
+  var l24 = l18q;
+
+  // L25 = L19(x) — Valor de Superávit Permitido no Exercício Anterior Não Aplicado
+  // até o 1º Quadrimestre do Exercício Atual = L19.1(x) + L19.2(x)
+  var sv25  = D.superavit || {};
+  var l25 = (sv25.x_191 || 0) + (sv25.x_192 || 0);
+
+  // L26 = informado somente no último bimestre
+  var l26 = isUltBim ? 0 : null;
+
+  // L27 = L30.1(af) — depende do Quadro 30 (período selecionado)
+  var q30 = aggQ30(meses);
+  var l27 = (q30['30.1'] && q30['30.1'].af) || 0;
+
+  // L28 = (22 + 23 - 24 - 25 - 26 - 27)
+  var l28 = l22 + l23 - l24 - (l25||0) - (l26||0) - l27;
+
+  document.getElementById('thead-q22-28').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:480px">Especificação</th>'
+    +'<th style="min-width:160px">Valor</th>'
+    +'</tr>';
+
+  var noteDE = isUltBim ? ' (d) — empenhadas' : ' (e) — liquidadas';
+
+  var html = '';
+  html += '<tr class="n1"><td class="name ind1"><b style="color:#94a3b8;margin-right:6px">22</b>'
+        + 'TOTAL DAS DESPESAS DE MDE CUSTEADAS COM RECURSOS DE IMPOSTOS = L20'+escHtml(noteDE)+'</td>'
+        + '<td class="num">'+fmtNum(l22)+'</td></tr>';
+  html += '<tr class="n1"><td class="name ind1"><b style="color:#94a3b8;margin-right:6px">23</b>'
+        + 'TOTAL DAS RECEITAS TRANSFERIDAS AO FUNDEB = L4</td>'
+        + '<td class="num">'+fmtNum(l23)+'</td></tr>';
+  html += '<tr class="n1"><td class="name ind1"><b style="color:#94a3b8;margin-right:6px">24</b>'
+        + '(–) Receitas do FUNDEB não utilizadas no exercício, em valor superior a 10% = L18(q)</td>'
+        + '<td class="num">'+fmtNum(l24)+'</td></tr>';
+  html += '<tr class="n1"><td class="name ind1"><b style="color:#94a3b8;margin-right:6px">25</b>'
+        + '(–) Superávit permitido no exercício imediatamente anterior não aplicado até o 1º quadrimestre do exercício atual = L19(x)</td>'
+        + '<td class="num">'+fmtNum(l25)+'</td></tr>';
+  html += '<tr class="n1"><td class="name ind1"><b style="color:#94a3b8;margin-right:6px">26</b>'
+        + '(–) Restos a pagar não processados inscritos no exercício sem disponibilidade financeira de recursos de impostos'
+        + ' <span style="color:#94a3b8;font-size:.65rem">(informado somente no último bimestre)</span></td>'
+        + '<td class="num">'+(l26===null ? '—' : fmtNum(l26))+'</td></tr>';
+  html += '<tr class="n1"><td class="name ind1"><b style="color:#94a3b8;margin-right:6px">27</b>'
+        + '(–) Cancelamento, no exercício, de restos a pagar inscritos com disponibilidade financeira de recursos de impostos vinculados ao ensino = L30.1(af)</td>'
+        + '<td class="num">'+fmtNum(l27)+'</td></tr>';
+  html += '<tr class="n0"><td class="name"><b>28- TOTAL DAS DESPESAS PARA FINS DE LIMITE (22 + 23 − 24 − 25 − 26 − 27)</b></td>'
+        + '<td class="total">'+fmtNum(l28)+'</td></tr>';
+
+  document.getElementById('tbody-q22-28').innerHTML = html;
+
+  return l28; // reaproveitado pelo Quadro 10 (linha 29)
+}
+
+// ─── Quadro 10: Linha 29 — Apuração do Limite Mínimo Constitucional ────────
+function renderQ29(meses, l28){
+  var r   = aggData(meses, D.receita);
+  var l3  = calcL3(r);
+  var l4  = calcFundeb20(r);
+  var l5  = calcMinimo(r);
+
+  var z  = 0.25 * (l3 || (l4 + l5)); // 25% de L3 ou (L4+L5)
+  var aa = l28;
+  var ab = l3 > 0 ? (l28 / l3 * 100) : null;
+
+  document.getElementById('thead-q29').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:480px">Especificação</th>'
+    +'<th style="min-width:160px">Valor Exigido (z)</th>'
+    +'<th style="min-width:160px">Valor Aplicado (aa)</th>'
+    +'<th style="min-width:120px">% Aplicado (ab)</th>'
+    +'</tr>';
+
+  var cumprido = ab !== null && ab >= 25;
+  var cls = ab===null ? 'ind-neutral' : (cumprido ? 'ind-ok' : 'ind-nok');
+
+  var html = '<tr class="'+cls+'">'
+    +'<td class="name"><b style="color:#94a3b8;margin-right:6px">29</b>'
+    +'APLICAÇÃO EM MDE SOBRE A RECEITA RESULTANTE DE IMPOSTOS [25% de L3 ou (L4+L5)]</td>'
+    +'<td class="num">'+fmtNum(z)+'</td>'
+    +'<td class="num">'+fmtNum(aa)+'</td>'
+    +'<td class="pct" style="font-weight:700">'+(ab===null?'—':fmtPct(ab))+'</td>'
+    +'</tr>';
+
+  document.getElementById('tbody-q29').innerHTML = html;
+}
+
+// ─── Quadro 11: Linha 30 — Restos a Pagar inscritos em exercícios anteriores ─
+function renderQ30(meses){
+  var q = aggQ30(meses);
+
+  document.getElementById('thead-q30').innerHTML = '<tr>'
+    +'<th class="left" style="min-width:420px">Especificação</th>'
+    +'<th style="min-width:120px">Saldo<br>Inicial (ac)</th>'
+    +'<th style="min-width:120px">RP<br>Liquidados (ad)</th>'
+    +'<th style="min-width:120px">RP<br>Pagos (ae)</th>'
+    +'<th style="min-width:120px">RP<br>Cancelados (af)</th>'
+    +'<th style="min-width:120px">Saldo<br>Final (ag)</th>'
+    +'</tr>';
+
+  var keys = ['30.1','30.2','30.3'];
+  var tot = {ac:0,ad:0,ae:0,af:0,ag:0};
+  keys.forEach(function(k){
+    var v = q[k];
+    for(var f in tot) tot[f]+=v[f]||0;
+  });
+
+  function cols(v){
+    return '<td class="num">'+fmtNum(v.ac)+'</td>'
+         + '<td class="num">'+fmtNum(v.ad)+'</td>'
+         + '<td class="num">'+fmtNum(v.ae)+'</td>'
+         + '<td class="num">'+fmtNum(v.af)+'</td>'
+         + '<td class="num">'+fmtNum(v.ag)+'</td>';
+  }
+
+  var html = '';
+  html += '<tr class="n0"><td class="name"><b>30- RESTOS A PAGAR DE DESPESAS COM MDE</b></td>'
+        + cols(tot).replace(/class="num"/g,'class="total"')+'</tr>';
+  html += '<tr class="sep"><td colspan="6"></td></tr>';
+  keys.forEach(function(k, i){
+    var v = q[k];
+    html += '<tr class="n1"><td class="name ind1">'
+          +'<b style="color:#94a3b8;margin-right:6px">30.'+(i+1)+'</b>'
+          +escHtml(Q30_LABELS[k]||k)+'</td>'
+          + cols(v)+'</tr>';
+  });
+
+  document.getElementById('tbody-q30').innerHTML = html;
+}
+
+// ─── Refresh principal ─────────────────────────────────────────────────────
+function refresh(){
+  if(!D) return;
+  var meses = mesesDoBimestre(curBim);
+  renderKPIs(meses);
+  renderReceita(meses);
+  renderSuperavit(meses);
+  renderFundeb(meses);
+  renderFundebSubfunc(meses);
+  renderIndFundeb(meses);
+  renderIndicadoresPct(meses);
+  renderL18(meses);
+  renderL19();
+  renderQ20(meses);
+  renderQ21(meses);
+  renderQ30(meses);
+  var l28 = renderQ22a28(meses);
+  renderQ29(meses, l28);
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+function init(json){
+  D = json;
+  overlay.style.display = 'none';
+
+  // Cabeçalho: data de atualização
+  var el = document.getElementById('data-atualizacao');
+  if(el && json.atualizado_em){
+    var d = new Date(json.atualizado_em);
+    el.textContent = 'Dados atualizados em: ' +
+      d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',
+        day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+
+  // Subtítulo com ano
+  var sub = document.querySelector('.subtitle');
+  if(sub && json.ano) sub.textContent = 'RREO — Anexo 8 (LDB, art. 72) — Exercício '+json.ano+' — Governo do Distrito Federal';
+
+  if(!json.max_mes){
+    overlay.style.display='flex';
+    overlay.innerHTML='<div style="font-size:2rem">&#128203;</div><div style="max-width:360px;text-align:center">Nenhum dado de receita realizada encontrado para este exercício.</div>';
+    return;
+  }
+
+  // Garantir que fundeb_previsao existe (compatibilidade com gz antigos)
+  if(!D.fundeb_previsao) D.fundeb_previsao = {};
+
+  curBim = maxBimestre();
+  setupBimBar();
+  refresh();
+}
+
+function handleError(err){
+  overlay.style.display='flex';
+  overlay.innerHTML='<div style="font-size:2rem">&#9888;&#65039;</div>'
+    +'<div style="max-width:360px;text-align:center">Erro ao carregar dados: '+escHtml(err.message)+'</div>';
+}
+
+// ─── Brasão ────────────────────────────────────────────────────────────────
+(function(){
+  var img=document.getElementById('brasao');
+  img.src='../tools/Brasão_do_Distrito_Federal_Brasil.png';
+  img.onerror=function(){img.style.display='none';};
+})();
+
+// ─── Carga de dados ────────────────────────────────────────────────────────
+fetchJsonGz('../data/gz/minimo_educacao.json.gz?v='+new Date().toISOString().slice(0,10))
+  .catch(function(){return fetchSupabase();})
+  .then(init)
+  .catch(handleError);
+</script>
+</body>
+</html>

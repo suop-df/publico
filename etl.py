@@ -78,6 +78,11 @@ QUERIES = [
         "sql_file": "minimo_saude.sql",
         "transform": "minimo_saude",
     },
+    {
+        "file": "minimo_educacao.json",
+        "sql_file": "minimo_educacao.sql",
+        "transform": "minimo_educacao",
+    },
 ]
 
 
@@ -130,7 +135,11 @@ def read_sql(filename):
         raise FileNotFoundError(f"Arquivo SQL nao encontrado: {path}")
     sql = path.read_text(encoding="utf-8")
     lines = [line for line in sql.splitlines() if not line.strip().startswith("--")]
-    return "\n".join(lines).replace("{SCHEMA_ANO}", SCHEMA_ANO).strip()
+    return (
+        "\n".join(lines)
+        .replace("{SCHEMA_ANO}", SCHEMA_ANO)
+        .strip()
+    )
 
 
 def resolve_query(item):
@@ -1373,6 +1382,591 @@ def upsert_minimo_saude_supabase(D_obj):
         log.error(f"  Supabase minimo_saude falhou: {type(e).__name__}: {e}")
 
 
+def build_minimo_educacao_data(rows):
+    """
+    Computa o RREO MDE (Mínimo da Educação) organizado por mês acumulado.
+    Quadros: Receita Resultante de Impostos (Arts. 212 e 212-A CF) + FUNDEB.
+    Regras: tools/regra_minimo_educacao.txt
+    """
+    ano_atual = datetime.now().year
+    ano_ant   = ano_atual - 1
+
+    # L8.1 / L8.2 = SUPERÁVIT DO EXERCÍCIO IMEDIATAMENTE ANTERIOR / RESIDUAL
+    #   mil2001.saldocontabil_ex não retém dados de ano_atual-2, então L8 não é
+    #   calculável automaticamente — informado manualmente a cada ano, a partir
+    #   do L8 (8.1+8.2) publicado no RREO do exercício anterior.
+    MDE_SUPERAVIT_8_1 = 31361102.40   # 8.1 — superávit do exercício imediatamente anterior
+    MDE_SUPERAVIT_8_2 = 0.00          # 8.2 — superávit residual de outros exercícios
+
+    # Acumulador de receita FUNDEB do ano anterior para L19(s)
+    # L19(s) = 10% × receita FUNDEB do ano anterior
+    #   f61    : NR=17515001 + fonte_mae=122  (19.1)
+    #   f_1715 : SUBSTR(ccor,1,4)='1715' (COED=1715)  (19.2)
+    fundeb_ant = {"f61": 0.0, "f_1715": 0.0}
+
+    REC_KEYS = [
+        "icms_principal", "icms_adicional",
+        "itcd", "ipva", "iptu", "itbi", "iss", "irrf", "outros_impostos",
+        "fpe", "fpm", "ipi_exp", "itr", "iof_ouro", "outras_transf",
+    ]
+    FUNDEB_KEYS = [
+        "f61_principal", "f61_rend_aplic", "f61_ressarc",
+        "f62_principal", "f62_rend_aplic", "f62_ressarc",
+        "f63_principal", "f63_rend_aplic", "f63_ressarc",
+        "f64_principal", "f64_rend_aplic", "f64_ressarc",
+    ]
+    REND_NR6    = {"132101", "132102", "132103", "132105", "132999"}
+    RESSARC_NR6 = {"192251"}
+
+    rec_prev   = {k: 0.0 for k in REC_KEYS}
+    fund_prev  = {k: 0.0 for k in FUNDEB_KEYS}
+    rec_real   = {m: {k: 0.0 for k in REC_KEYS}    for m in range(1, 13)}
+    fund_real  = {m: {k: 0.0 for k in FUNDEB_KEYS} for m in range(1, 13)}
+    max_mes    = 0
+
+    # ── Despesa MDE ──────────────────────────────────────────────────────────
+    # Subfunções do Quadro 10 (FUNDEB): inclui 122=Adm.Geral e transp=781-785
+    SUBFUNC_Q10    = {"361","362","363","365","366","367","122"}
+    SUBFUNC_TRANSP = {"781","782","783","784","785"}          # Transporte Escolar (10.2.7)
+    SUBFUNC_KEYS   = sorted(SUBFUNC_Q10) + ["transp", "outras"]
+    # FR suffix = últimos 3 dígitos do COFONTEFEDERAL; X540-X543 + X546 = FUNDEB
+    FR_FUNDEB      = {"540","541","542","543","546"}
+    # NDs excluídas do grupo Profissionais mesmo sendo 31xxx (encargos patronais)
+    ND_EXCL_PROF   = {"31900100","31900300"}
+
+    def _sub_bucket():
+        """Acumuladores por subfunção: dot_atu, emp, liq, pago."""
+        return {s: {"dot_atu": 0.0, "emp": 0.0, "liq": 0.0, "pago": 0.0}
+                for s in SUBFUNC_KEYS}
+
+    # CO=1001: plano (sem split prof/outras — Quadro 20 vem depois)
+    desp_dot_1001  = _sub_bucket()
+    desp_real_1001 = {m: _sub_bucket() for m in range(1, 13)}
+
+    # Quadro 10: split por grupo baseado em FR (fonte FUNDEB) + ND
+    #   'prof'  = FR fundeb AND ND 31xxx exceto ND_EXCL_PROF
+    #   'outras'= FR fundeb AND (ND não é 31xxx, OU ND em ND_EXCL_PROF)
+    GRUPOS_1070 = ("prof", "outras")
+    desp_dot_1070  = {g: _sub_bucket() for g in GRUPOS_1070}
+    desp_real_1070 = {m: {g: _sub_bucket() for g in GRUPOS_1070} for m in range(1, 13)}
+
+    # Quadro 20: Despesas MDE custeadas com Receitas de Impostos (exceto FUNDEB)
+    # FR: 500 | 502 | 718  +  CO: 1001  +  COFUNCAO: 12
+    # ND: grupo 3 (correntes) + grupo 4 (capital), exceto ND_EXCL_PROF (31900100, 31900300)
+    FR_Q20       = {"500", "502", "718"}
+    Q20_SUBS     = {"361","362","365","366","367","122"}  # linhas individuais
+    Q20_TRANSP   = "785"                                  # 20.7 Transporte
+
+    # Exclusões oficiais do Quadro 20 por DESDOBRAMENTO de ND (8 dígitos) —
+    # aba "Exclusões" da planilha oficial (MDE20261B.xlsx), conferidas ao
+    # centavo contra o RREO Anexo 8 do 1º bim/2026. Como a dotação no SIGGO
+    # só existe em natureza de 6 dígitos, o RREO oficial ABATE da DOTAÇÃO
+    # ATUALIZADA o EMPENHADO acumulado dessas fatias (e as exclui de
+    # emp/liq/pago). O abate vale para todo o universo CO=1001 (fonte
+    # resumida), SEM o filtro FR_Q20 — há fatias em fontes 1021/1002, de
+    # COFONTEFEDERAL 1540 (FUNDEB), que o oficial abate mesmo assim. Não
+    # restringir a lista de fontes: o critério oficial é a fonte resumida.
+    ND8_EXCL_MDE = {"31901195", "31901131", "31901125", "33903023"}
+
+    def _q20_bucket():
+        keys = sorted(Q20_SUBS) + ["transp", "outras"]
+        return {s: {"dot_atu":0.0, "emp":0.0, "liq":0.0, "pago":0.0} for s in keys}
+
+    desp_real_q20 = {m: _q20_bucket() for m in range(1, 13)}
+
+    # Quadro 21: Despesas MDE custeadas com Receitas de Impostos E FUNDEB
+    # (FR 500/502/718; CO 1001) + (FR 540/541/542/543/546), cofuncao=12
+    # 21.1 (subfunção 365) é dividido em creche (21.1.1) e pré-escola (21.1.2)
+    # via COPROJETO=2388 + COSUBTITULO (1=creche, 2=pré-escola); demais
+    # combinações com subfunção 365 caem no resíduo "365" (educação infantil geral)
+    Q21_KEYS = ["365", "361", "362", "364", "demais"]
+
+    def _q21_bucket():
+        return {s: {"dot_atu": 0.0, "emp": 0.0, "liq": 0.0, "pago": 0.0} for s in Q21_KEYS}
+
+    def _q21_key(subfunc, coprojeto=None, cosubtitulo=None):
+        return subfunc if subfunc in ("365", "361", "362", "364") else "demais"
+
+    desp_real_q21 = {m: _q21_bucket() for m in range(1, 13)}
+
+    # Quadro 30: Restos a Pagar inscritos em exercícios anteriores — MDE
+    #   30.1: FR 500/502/718, CO=1001 | 30.2: FR=540 | 30.3: FR 541/542/543
+    #   colunas: ac=saldo inicial, ad=liquidados, ae=pagos, af=cancelados (ag = ac-ae-af)
+    # Regra atualizada (2026-06-12): contas exatas (sem SUBSTR), soma direta
+    # do saldo (convenção ímpar=deb-cred / par=cred-deb). Validado EXATAMENTE
+    # (diff=0,00) contra RREO oficial 1º bim/2026 (30.1/30.2/30.3):
+    #   ac = soma(CC9_AC),        inmes=0
+    #   ae = soma(CC9_AE),        inmes 1-12
+    #   ad = ae + soma(CC9_AD_EXTRA), inmes 1-12
+    #   af = soma(CC9_AF),        inmes 1-12
+    # Ver tools/regra_minimo_educacao.txt.
+    Q30_KEYS   = ("30.1", "30.2", "30.3")
+    FR_Q30_1   = {"500", "502", "718"}
+    FR_Q30_2   = {"540"}
+    FR_Q30_3   = {"541", "542", "543"}
+    CC9_AC       = {"531100000", "531200000", "532100000", "532200000"}
+    CC9_AE       = {"631400000", "631820000", "632210100", "632210200",
+                     "632210300", "632210400"}
+    CC9_AD_EXTRA = {"631300000", "631810000"}
+    CC9_AF       = {"631900000", "632900000"}
+
+    def _q30_bucket():
+        return {k: {"ac": 0.0, "ae": 0.0, "ad_extra": 0.0, "af": 0.0} for k in Q30_KEYS}
+
+    # Por mês, como os demais quadros — o seletor de período do dashboard
+    # agrega os meses e calcula ag = ac - ae - af sobre o agregado.
+    q30_acc = {m: _q30_bucket() for m in range(1, 13)}
+
+    def _q30_grp(co_row, fr_suf):
+        if co_row == "1001" and fr_suf in FR_Q30_1:
+            return "30.1"
+        if fr_suf in FR_Q30_2:
+            return "30.2"
+        if fr_suf in FR_Q30_3:
+            return "30.3"
+        return None
+
+    # Indicadores FUNDEB (linhas 11-14) — sem dimensão de subfunção, só emp/liq/pago
+    # l11_540=impostos, l11_541=VAAF, l11_542=VAAT, l11_543=VAAR
+    # l12=profissionais(FR 540+541+542), l13=VAAT infantil, l14=VAAT capital
+    IND_KEYS = ("l11_540","l11_541","l11_542","l11_543","l12","l13","l14")
+    ind_real = {m: {k: {"emp":0.0,"liq":0.0,"pago":0.0} for k in IND_KEYS}
+                for m in range(1, 13)}
+
+    def classify_rec(nr):
+        if nr[:7] == "1114501":                                            return "icms_principal"
+        if nr[:7] == "1114502":                                            return "icms_adicional"
+        if nr[:6] == "111252":                                             return "itcd"
+        if nr[:6] == "111251":                                             return "ipva"
+        if nr[:6] == "111250":                                             return "iptu"
+        if nr[:6] == "111253":                                             return "itbi"
+        if nr[:7] in ("1114511", "1114512"):                               return "iss"
+        if nr[:6] == "111303":                                             return "irrf"
+        if nr[:6] == "111999":                                             return "outros_impostos"
+        if nr[:6] == "171150":                                             return "fpe"
+        if nr[:7] in ("1711511", "1711512"):                               return "fpm"
+        if nr[:6] in ("171153",  "172152"):                                return "ipi_exp"
+        if nr[:6] == "171152":                                             return "itr"
+        if nr[:6] == "171155":                                             return "iof_ouro"
+        if nr[:6] in ("171961",  "171962", "171963", "172953"):            return "outras_transf"
+        return None
+
+    def classify_fundeb(nr, fr_suf):
+        is_rend    = nr[:6] in REND_NR6
+        is_ressarc = nr[:6] in RESSARC_NR6
+        if fr_suf == "540":
+            if nr[:6] == "175150":                 return "f61_principal"
+            if is_rend:                             return "f61_rend_aplic"
+            if is_ressarc:                          return "f61_ressarc"
+        elif fr_suf in ("541", "546"):
+            if nr[:6] in ("171551", "171553"):     return "f62_principal"
+            if is_rend:                             return "f62_rend_aplic"
+            if is_ressarc:                          return "f62_ressarc"
+        elif fr_suf == "542":
+            if nr[:6] == "171550":                 return "f63_principal"
+            if is_rend:                             return "f63_rend_aplic"
+            if is_ressarc:                          return "f63_ressarc"
+        elif fr_suf == "543":
+            if nr[:6] == "171552":                 return "f64_principal"
+            if is_rend:                             return "f64_rend_aplic"
+            if is_ressarc:                          return "f64_ressarc"
+        return None
+
+    for r in rows:
+        # ── Separar ano corrente vs ano anterior ─────────────────────────────
+        inano = int(r.get("inano") or ano_atual)
+
+        cc_raw = str(r.get("cocontacontabil") or "").strip()
+        ccor   = str(r.get("cocontacorrente") or "").strip()
+        fr_raw = str(r.get("cofontefederal")  or "").strip()
+        mes_v  = r.get("inmes")
+        mes    = int(mes_v) if mes_v is not None else 0
+        vad    = float(r.get("vadebito")  or 0)
+        vacr   = float(r.get("vacredito") or 0)
+
+        if not cc_raw:
+            continue
+
+        # Natureza: ímpar = devedora (vad-vacr); par = credora (vacr-vad)
+        saldo = (vad - vacr) if cc_raw[0] in "13579" else (vacr - vad)
+        if not saldo:
+            continue
+
+        # ── Ano anterior: acumula receita FUNDEB para L8.1/L19(s) ──────────────
+        if inano == ano_ant:
+            nr_ant      = ccor[:8] if len(ccor) >= 8 else ccor.ljust(8, "0")
+            cofonte_ant = str(r.get("cofonte") or "").strip()
+
+            # Contas EXATAS conforme a regra do L19(s) — não usar a família
+            # 6212/6213: o SQL passou a trazer também contas de dedução
+            # (ex.: 621390101) para a linha 1.8 do ano corrente, e elas NÃO
+            # entram no cálculo do superávit (validado contra o Excel).
+            if cc_raw in ("621200000", "621300000"):
+                # L8.1/L19.1(s): NR=17515001 + fonte_mae=122
+                if nr_ant == "17515001":
+                    fundeb_ant["f61"] += saldo
+                elif cofonte_ant[:3] == "122":
+                    fundeb_ant["f61"] += saldo
+                # L19.2(s): COED=1715 = SUBSTR(ccor,1,4)='1715'
+                if nr_ant[:4] == "1715":
+                    fundeb_ant["f_1715"] += saldo
+
+            continue  # linhas do ano anterior não alimentam os quadros do ano corrente
+
+        cc4    = cc_raw[:4]
+        cc5    = cc_raw[:5]
+        nr     = ccor[:8] if len(ccor) >= 8 else ccor.ljust(8, "0")
+        fr_suf = fr_raw[-3:] if len(fr_raw) >= 3 else fr_raw
+
+        if cc4 in ("5211", "5212"):
+            # 521120101 = dedução FUNDEB — excluir da previsão
+            if cc_raw == "521120101":
+                continue
+            # Previsão Atualizada (sem dimensão de mês)
+            key = classify_rec(nr)
+            if key:
+                rec_prev[key] += saldo
+            key_f = classify_fundeb(nr, fr_suf)
+            if key_f:
+                fund_prev[key_f] += saldo
+
+        elif cc4 in ("6212", "6213"):
+            if not (1 <= mes <= 12):
+                continue
+            # 621310100 = dedução de FUNDEB — excluir das realizadas
+            if cc_raw == "621310100":
+                continue
+            # Receita realizada
+            key = classify_rec(nr)
+            if key:
+                rec_real[mes][key] += saldo
+                if mes > max_mes:
+                    max_mes = mes
+            # FUNDEB recebido (subconjunto filtrado por FR)
+            key_f = classify_fundeb(nr, fr_suf)
+            if key_f:
+                fund_real[mes][key_f] += saldo
+
+        elif cc5 in ("52211", "52212", "52215", "52219"):
+            # Dotação MDE — acumulada por mês (igual à execução) para que o
+            # seletor de período do dashboard filtre corretamente
+            if not (1 <= mes <= 12):
+                continue
+            co_row  = str(r.get("co")          or "").strip()
+            nd_row  = str(r.get("nd")          or "").strip()
+            subfunc = str(r.get("cosubfuncao") or "").strip()
+            cofunc  = str(r.get("cofuncao")    or "").strip()
+            nd_ok   = nd_row[:8] not in ND_EXCL_PROF
+
+            if subfunc in SUBFUNC_TRANSP:
+                sub_key = "transp"
+            elif subfunc in SUBFUNC_Q10:
+                sub_key = subfunc
+            else:
+                sub_key = "outras"
+
+            # FR fundeb tem prioridade: CO=1001 com FR=540 ainda é Quadro 10
+            if fr_suf in FR_FUNDEB or co_row == "1070":
+                is_prof = nd_row[:2] == "31" and nd_row[:8] not in ND_EXCL_PROF
+                grupo   = "prof" if is_prof else "outras"
+                desp_real_1070[mes][grupo][sub_key]["dot_atu"] += saldo
+            elif co_row == "1001":
+                desp_real_1001[mes][sub_key]["dot_atu"] += saldo
+
+            # Quadro 20: CO=1001, FR 500/502/718, nd_ok
+            #   cofuncao=12 → subfunções individuais + catchall "outras"
+            #   cofuncao=28 + cosubfuncao 843/844 → "outras" (mesmo que 10.2.8)
+            if co_row == "1001" and fr_suf in FR_Q20 and nd_ok:
+                if cofunc == "12":
+                    q20k = "transp" if subfunc == Q20_TRANSP \
+                           else (subfunc if subfunc in Q20_SUBS else "outras")
+                elif cofunc == "28" and subfunc in ("843","844"):
+                    q20k = "outras"
+                else:
+                    q20k = None
+                if q20k:
+                    desp_real_q20[mes][q20k]["dot_atu"] += saldo
+
+            # Quadro 21: (CO=1001 e FR 500/502/718) OU FR FUNDEB, cofuncao=12, nd_ok
+            if cofunc == "12" and nd_ok and \
+               ((co_row == "1001" and fr_suf in FR_Q20) or fr_suf in FR_FUNDEB):
+                coproj_q21 = str(r.get("coprojeto")   or "").strip()
+                cosubt_q21 = str(r.get("cosubtitulo") or "").strip()
+                q21k = _q21_key(subfunc, coproj_q21, cosubt_q21)
+                if q21k:
+                    desp_real_q21[mes][q21k]["dot_atu"] += saldo
+
+        elif cc5 == "62213":
+            # Despesas executadas MDE (empenhadas / liquidadas / pagas)
+            if not (1 <= mes <= 12):
+                continue
+            co_row  = str(r.get("co") or "").strip()
+            nd_row  = str(r.get("nd") or "").strip()
+            subfunc = str(r.get("cosubfuncao") or "").strip()
+            if subfunc in SUBFUNC_TRANSP:
+                sub_key = "transp"
+            elif subfunc in SUBFUNC_Q10:
+                sub_key = subfunc
+            else:
+                sub_key = "outras"
+            cc7 = cc_raw[:7]
+
+            is_prof = nd_row[:2] == "31" and nd_row[:8] not in ND_EXCL_PROF
+
+            def _acc(bucket):
+                bucket[sub_key]["emp"] += saldo
+                if cc7 in ("6221303", "6221304", "6221307"):
+                    bucket[sub_key]["liq"] += saldo
+                if cc7 == "6221304":
+                    bucket[sub_key]["pago"] += saldo
+
+            def _acc_ind(b):
+                b["emp"] += saldo
+                if cc7 in ("6221303", "6221304", "6221307"):
+                    b["liq"] += saldo
+                if cc7 == "6221304":
+                    b["pago"] += saldo
+
+            # ── Quadro 10 ──────────────────────────────────────────────────
+            # FR fundeb tem prioridade: CO=1001 com FR=540 ainda é Quadro 10
+            if fr_suf in FR_FUNDEB or co_row == "1070":
+                grupo = "prof" if is_prof else "outras"
+                _acc(desp_real_1070[mes][grupo])
+            elif co_row == "1001":
+                _acc(desp_real_1001[mes])
+
+            # ── Indicadores (linhas 11-14) ─────────────────────────────────
+            # Acumula despesas de execução por tipo de fonte FUNDEB
+            nd_ok = nd_row[:8] not in ND_EXCL_PROF  # exclui 31900100 e 31900300
+
+            if fr_suf == "540" and nd_ok:
+                _acc_ind(ind_real[mes]["l11_540"])
+            elif fr_suf in ("541", "546") and nd_ok:
+                _acc_ind(ind_real[mes]["l11_541"])
+            elif fr_suf == "542" and nd_ok:
+                _acc_ind(ind_real[mes]["l11_542"])
+                if subfunc == "365":           # linha 13: VAAT educação infantil
+                    _acc_ind(ind_real[mes]["l13"])
+                if nd_row[:1] == "4":          # linha 14: VAAT capital
+                    _acc_ind(ind_real[mes]["l14"])
+            elif fr_suf == "543" and nd_ok:
+                _acc_ind(ind_real[mes]["l11_543"])
+
+            # linha 12: profissionais FR 1540+1541+1542 exatos; ND 31 exceto exclusões
+            # CO não é filtrado aqui pois no banco essas linhas têm CO=1001
+            # (incategoria nula não dispara o CASE CO=1070 no SQL)
+            if fr_raw in ("1540","1541","1542") and is_prof:
+                _acc_ind(ind_real[mes]["l12"])
+
+            # ── Quadro 20 ─────────────────────────────────────────────────
+            # CO=1001, FR 500/502/718, nd_ok
+            #   cofuncao=12 → subfunções individuais + catchall "outras"
+            #   cofuncao=28 + cosubfuncao 843/844 → "outras" (mesmo que 10.2.8)
+            # Fatias com ND em ND8_EXCL_MDE (desdobramento excluído pelo RREO
+            # oficial) ficam FORA de emp/liq/pago e têm o empenhado ABATIDO da
+            # dotação — sem exigir FR_Q20, pois o oficial filtra por fonte
+            # resumida (já garantida pelo CO=1001) e não por COFONTEFEDERAL.
+            cofunc = str(r.get("cofuncao") or "").strip()
+            if co_row == "1001" and nd_ok and \
+               (fr_suf in FR_Q20 or nd_row[:8] in ND8_EXCL_MDE):
+                if cofunc == "12":
+                    q20k = "transp" if subfunc == Q20_TRANSP \
+                           else (subfunc if subfunc in Q20_SUBS else "outras")
+                elif cofunc == "28" and subfunc in ("843","844"):
+                    q20k = "outras"
+                else:
+                    q20k = None
+                if q20k:
+                    b = desp_real_q20[mes][q20k]
+                    if nd_row[:8] in ND8_EXCL_MDE:
+                        # todo saldo em 62213 é movimento de empenho do mês
+                        b["dot_atu"] -= saldo
+                        if fr_suf not in FR_Q20:
+                            # fatia de fonte fora do universo FR (ex.: 1021/
+                            # 1002): nunca entrou em emp/liq/pago, mas o RREO
+                            # oficial a ABATE dessas colunas — subtrair
+                            # (fatias dentro do universo FR basta não somar)
+                            b["emp"] -= saldo
+                            if cc7 in ("6221303","6221304","6221307"):
+                                b["liq"] -= saldo
+                            if cc7 == "6221304":
+                                b["pago"] -= saldo
+                    else:
+                        b["emp"] += saldo
+                        if cc7 in ("6221303","6221304","6221307"):
+                            b["liq"] += saldo
+                        if cc7 == "6221304":
+                            b["pago"] += saldo
+
+            # ── Quadro 21 ─────────────────────────────────────────────────
+            # Mesmo tratamento de ND8_EXCL_MDE do Quadro 20: fatia excluída
+            # fica fora de emp/liq/pago e tem o empenhado abatido da dotação.
+            # Diferença: aqui as fatias de fontes 1021/1002 (FR 1540) JÁ estão
+            # na base via FR_FUNDEB — para essas basta não somar; a subtração
+            # só se aplica a fatia fora da base do quadro.
+            q21_base = (co_row == "1001" and fr_suf in FR_Q20) or fr_suf in FR_FUNDEB
+            q21_nd8  = co_row == "1001" and nd_row[:8] in ND8_EXCL_MDE
+            if cofunc == "12" and nd_ok and (q21_base or q21_nd8):
+                coproj_q21 = str(r.get("coprojeto")   or "").strip()
+                cosubt_q21 = str(r.get("cosubtitulo") or "").strip()
+                q21k = _q21_key(subfunc, coproj_q21, cosubt_q21)
+                if q21k:
+                    b21 = desp_real_q21[mes][q21k]
+                    if q21_nd8:
+                        # todo saldo em 62213 é movimento de empenho do mês
+                        b21["dot_atu"] -= saldo
+                        if not q21_base:
+                            b21["emp"] -= saldo
+                            if cc7 in ("6221303", "6221304", "6221307"):
+                                b21["liq"] -= saldo
+                            if cc7 == "6221304":
+                                b21["pago"] -= saldo
+                    else:
+                        b21["emp"] += saldo
+                        if cc7 in ("6221303", "6221304", "6221307"):
+                            b21["liq"] += saldo
+                        if cc7 == "6221304":
+                            b21["pago"] += saldo
+
+        elif (cc_raw in CC9_AC or cc_raw in CC9_AE
+              or cc_raw in CC9_AD_EXTRA or cc_raw in CC9_AF):
+            # ── Quadro 30: Restos a Pagar de despesas com MDE ─────────────────
+            co_row = str(r.get("co") or "").strip()
+            qk = _q30_grp(co_row, fr_suf)
+            if qk:
+                if cc_raw in CC9_AC:
+                    # saldo inicial: inmes=0 — entra no mês 1
+                    mes30 = mes if 1 <= mes <= 12 else 1
+                    q30_acc[mes30][qk]["ac"] += saldo
+                elif 1 <= mes <= 12:
+                    # ad/ae/af são movimento do período (inmes 1-12) — o
+                    # saldo de abertura (inmes=0) dessas contas espelha o
+                    # (ac) e não deve entrar aqui (senão duplica o ac).
+                    b30 = q30_acc[mes][qk]
+                    if cc_raw in CC9_AE:
+                        b30["ae"] += saldo
+                    if cc_raw in CC9_AD_EXTRA:
+                        b30["ad_extra"] += saldo
+                    if cc_raw in CC9_AF:
+                        b30["af"] += saldo
+
+    if max_mes == 0:
+        log.warning("  Mínimo Educação: nenhum dado de receita realizada encontrado.")
+        return {"ano": ano_atual, "max_mes": 0, "previsao": {}, "receita": {}, "fundeb": {}}
+
+    receita = {
+        str(m): {k: round(rec_real[m][k], 2) for k in REC_KEYS}
+        for m in range(1, max_mes + 1)
+    }
+    fundeb = {
+        str(m): {k: round(fund_real[m][k], 2) for k in FUNDEB_KEYS}
+        for m in range(1, max_mes + 1)
+    }
+
+    # ── Despesa: montar dicts de saída ───────────────────────────────────────
+    # dot_atu agora está dentro de despesa[mes] (mesma dimensão que emp/liq/pago)
+    def _round_sub(bucket):
+        return {s: {k: round(v, 2) for k, v in vals.items()}
+                for s, vals in bucket.items()}
+
+    despesa = {
+        str(m): {
+            "1001": _round_sub(desp_real_1001[m]),
+            "1070": {g: _round_sub(desp_real_1070[m][g]) for g in GRUPOS_1070},
+        }
+        for m in range(1, max_mes + 1)
+    }
+
+    q20 = {
+        str(m): _round_sub(desp_real_q20[m])
+        for m in range(1, max_mes + 1)
+    }
+
+    q21 = {
+        str(m): _round_sub(desp_real_q21[m])
+        for m in range(1, max_mes + 1)
+    }
+
+    # Quadro 30: por mês, como os demais quadros. O ag (saldo final =
+    # ac - ae - af) é calculado no dashboard sobre o período agregado.
+    # ad = ae + ad_extra — ver comentário de CC9_AD_EXTRA acima.
+    def _q30_row(b):
+        ad = b["ae"] + b["ad_extra"]
+        return {"ac": round(b["ac"], 2), "ad": round(ad, 2),
+                "ae": round(b["ae"], 2), "af": round(b["af"], 2)}
+
+    q30 = {
+        str(m): {k: _q30_row(q30_acc[m][k]) for k in Q30_KEYS}
+        for m in range(1, max_mes + 1)
+    }
+
+    indicadores = {
+        str(m): {k: {f: round(v, 2) for f, v in vals.items()}
+                 for k, vals in ind_real[m].items()}
+        for m in range(1, max_mes + 1)
+    }
+
+    log.info(f"  Mínimo Educação: max_mes={max_mes}")
+    return {
+        "ano":             ano_atual,
+        "max_mes":         max_mes,
+        "previsao":        {k: round(rec_prev[k], 2) for k in REC_KEYS},
+        "fundeb_previsao": {k: round(fund_prev[k], 2) for k in FUNDEB_KEYS},
+        "receita":         receita,
+        "fundeb":          fundeb,
+        "despesa":         despesa,
+        "q20":             q20,
+        "q21":             q21,
+        "q30":             q30,
+        "indicadores":     indicadores,
+        "superavit": (lambda s191, s192, l8: {
+            # L19(s) = 10% × receita FUNDEB ano anterior (19.1/19.2)
+            "ant":      round(s191, 2),
+            "s_192":    round(s192, 2),
+            # L8.1 / L8.2 — constantes manuais (config no etl.py)
+            "l8_1":     round(MDE_SUPERAVIT_8_1, 2),
+            "l8_2":     round(MDE_SUPERAVIT_8_2, 2),
+            "residual": round(MDE_SUPERAVIT_8_2, 2),
+            # L19.1(t)/(w)/(x) = L8 (8.1+8.2); L19.2(t)/(w)/(x) = 0
+            "t_191": round(l8, 2), "t_192": 0.0,
+            # (u)/(v) ainda não implementados (despesas com superávit aplicado no ano)
+            "u_191": 0.0, "u_192": 0.0,
+            "v_191": 0.0, "v_192": 0.0,
+            "w_191": round(l8, 2), "w_192": 0.0,
+            "x_191": round(l8, 2), "x_192": 0.0,
+        })(fundeb_ant["f61"] * 0.10, fundeb_ant["f_1715"] * 0.10,
+           MDE_SUPERAVIT_8_1 + MDE_SUPERAVIT_8_2),
+    }
+
+
+def save_minimo_educacao_gz(D_obj):
+    payload = {"atualizado_em": datetime.now(timezone.utc).isoformat()}
+    payload.update(D_obj)
+    content = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    gz_path = GZ_DIR / "minimo_educacao.json.gz"
+    with gzip.open(gz_path, "wb", compresslevel=9) as f:
+        f.write(content)
+    size_kb = gz_path.stat().st_size / 1024
+    log.info(f"  minimo_educacao.json.gz -- {size_kb:.1f} KB")
+
+
+def upsert_minimo_educacao_supabase(D_obj):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        log.warning("  Supabase: nao configurado. Pulando upsert minimo_educacao.")
+        return
+    try:
+        ano = D_obj.get("ano") or datetime.now().year
+        payload = [{
+            "ano":           ano,
+            "dados":         D_obj,
+            "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        }]
+        total = _supabase_upsert("minimo_educacao", payload, "ano")
+        log.info(f"  Supabase: minimo_educacao {ano} enviada ({total} linha).")
+    except Exception as e:
+        log.error(f"  Supabase minimo_educacao falhou: {type(e).__name__}: {e}")
+
+
 def init_oracle():
     import oracledb
     if CLIENT_PATH:
@@ -1430,6 +2024,11 @@ def run():
                         D_obj = build_minimo_saude_data(data)
                         save_minimo_saude_gz(D_obj)
                         upsert_minimo_saude_supabase(D_obj)
+                        save_json(item["file"], data)
+                    elif item.get("transform") == "minimo_educacao":
+                        D_obj = build_minimo_educacao_data(data)
+                        save_minimo_educacao_gz(D_obj)
+                        upsert_minimo_educacao_supabase(D_obj)
                         save_json(item["file"], data)
                     elif item["file"] == "receita.json":
                         save_json(item["file"], data)
