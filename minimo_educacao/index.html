@@ -945,8 +945,13 @@ function renderIndFundeb(meses){
   var last = meses.length ? meses[meses.length-1] : 0;
   var ate  = last ? ' até '+MESES_NOME[last] : '';
 
-  document.getElementById('thead-ind-fundeb').innerHTML = '<tr>'
-    +'<th class="left" style="min-width:480px">Especificação</th>'
+  document.getElementById('thead-ind-fundeb').innerHTML =
+    '<tr>'
+    +'<th class="left" style="min-width:480px" rowspan="2">Especificação</th>'
+    +'<th colspan="4" style="text-align:center;font-size:.62rem;letter-spacing:.04em;border-bottom:1px solid var(--accent-200)">'
+    +'DESPESAS CUSTEADAS COM RECEITAS DO FUNDEB RECEBIDAS NO EXERCÍCIO</th>'
+    +'</tr>'
+    +'<tr>'
     +'<th style="min-width:130px">Despesas Empenhadas<br>no Exercício'+ate+'<br>(d)</th>'
     +'<th style="min-width:130px">Despesas Liquidadas<br>no Exercício'+ate+'<br>(e)</th>'
     +'<th style="min-width:130px">Despesas Pagas<br>no Exercício'+ate+'<br>(f)</th>'
@@ -963,9 +968,6 @@ function renderIndFundeb(meses){
   }
 
   var html='';
-  // Sub-título da seção — conforme PDF oficial
-  html += '<tr class="n0"><td class="name" colspan="5" style="font-size:.68rem;letter-spacing:.03em;text-align:center">'
-        +'DESPESAS CUSTEADAS COM RECEITAS DO FUNDEB RECEBIDAS NO EXERCÍCIO</td></tr>';
 
   // Linha 11 — total e sub-linhas
   html += '<tr class="n0"><td class="name"><b>11- TOTAL DAS DESPESAS CUSTEADAS COM RECURSOS DO FUNDEB RECEBIDAS NO EXERCÍCIO</b></td>'
