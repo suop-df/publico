@@ -52,6 +52,20 @@ body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1e293b;min-height:
 .kpi-value{font-size:1.15rem;font-weight:800;line-height:1.1;color:#1e293b}
 .kpi-card.destaque .kpi-value{color:var(--green-900);font-size:1.4rem}
 .kpi-sub{font-size:.62rem;color:#64748b;margin-top:3px}
+.kpi-comp{font-size:.6rem;color:#94a3b8;margin-top:5px;display:flex;flex-direction:column;gap:2px}
+.kpi-comp b{color:#64748b;font-weight:700}
+.kpi-comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08)}
+.kpi-comp-grid .cg-label{font-size:.6rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.kpi-comp-grid .cg-value{font-size:.92rem;font-weight:800;color:#1e293b}
+.kpi-card.abaixo .kpi-comp-grid .cg-label{color:var(--red-700)}
+.kpi-card.abaixo .kpi-comp-grid .cg-value{color:var(--red-900)}
+.kpi-card.destaque:not(.abaixo) .kpi-comp-grid .cg-value{color:var(--green-900)}
+.kpi-badge{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 10px;border-radius:4px;margin-bottom:4px}
+.kpi-badge.ok{background:var(--green-600);color:#fff}
+.kpi-badge.nok{background:var(--red-600);color:#fff}
+.kpi-ref{font-size:.65rem;font-weight:600;color:var(--green-900);margin-top:2px}
+.kpi-card.abaixo{border-color:var(--red-600);background:var(--red-100)}
+.kpi-card.abaixo .kpi-label,.kpi-card.abaixo .kpi-value,.kpi-card.abaixo .kpi-ref{color:var(--red-900)}
 
 /* Seletor de bimestre */
 .bim-bar{display:flex;gap:8px;flex-wrap:wrap}
@@ -126,42 +140,41 @@ tr.ind-neutral td{background:#f8fafc;color:#475569;font-weight:700}
 <!-- Content -->
 <div class="content">
 
-  <!-- KPI Row -->
-  <div class="kpi-row">
-    <div class="kpi-card neutral" id="kpi-imp">
-      <div class="kpi-label">Receita de Impostos Realizada</div>
-      <div class="kpi-value" id="kv-imp">—</div>
-      <div class="kpi-sub" id="ks-imp">Linha 1</div>
-    </div>
-    <div class="kpi-card neutral" id="kpi-transf">
-      <div class="kpi-label">Transferências Realizadas</div>
-      <div class="kpi-value" id="kv-transf">—</div>
-      <div class="kpi-sub" id="ks-transf">Linha 2</div>
-    </div>
-    <div class="kpi-card neutral" id="kpi-total">
-      <div class="kpi-label">Total Receita de Impostos (Linha 3)</div>
-      <div class="kpi-value" id="kv-total">—</div>
-      <div class="kpi-sub" id="ks-total">Linhas 1 + 2</div>
-    </div>
-    <div class="kpi-card neutral" id="kpi-fundeb20">
-      <div class="kpi-label">Destinado ao FUNDEB — 20% (Linha 4)</div>
-      <div class="kpi-value" id="kv-fundeb20">—</div>
-      <div class="kpi-sub">20% × base constitucional</div>
-    </div>
-    <div class="kpi-card neutral" id="kpi-minimo">
-      <div class="kpi-label">Mínimo além FUNDEB (Linha 5)</div>
-      <div class="kpi-value" id="kv-minimo">—</div>
-      <div class="kpi-sub">5% × base + 25% × outros impostos</div>
-    </div>
-    <div class="kpi-card destaque" id="kpi-fundrec">
-      <div class="kpi-label">Total FUNDEB Recebido (Linha 6)</div>
-      <div class="kpi-value" id="kv-fundrec">—</div>
-      <div class="kpi-sub" id="ks-fundrec">6.1 a 6.4</div>
-    </div>
-  </div>
-
   <!-- Seletor de bimestre -->
   <div class="bim-bar" id="bim-bar"></div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card neutral" id="kpi-total">
+      <div class="kpi-label">Receita Resultante de Impostos (Linha 3)</div>
+      <div class="kpi-value" id="kv-total">—</div>
+      <div class="kpi-comp">
+        <span>L1 Impostos: <b id="kv-imp">—</b></span>
+        <span>L2 Transferências: <b id="kv-transf">—</b></span>
+      </div>
+    </div>
+    <div class="kpi-card neutral" id="kpi-l28">
+      <div class="kpi-label">Despesas para Fins de Limite (Linha 28)</div>
+      <div class="kpi-value" id="kv-l28">—</div>
+      <div class="kpi-sub" id="ks-l28">—</div>
+    </div>
+    <div class="kpi-card destaque" id="kpi-l29">
+      <div class="kpi-label">% Aplicado em MDE (Linha 29)</div>
+      <div class="kpi-value" id="kv-l29">—</div>
+      <span class="kpi-badge" id="kb-l29">&nbsp;</span>
+      <div class="kpi-ref">Mínimo constitucional: 25%</div>
+      <div class="kpi-comp-grid">
+        <div>
+          <div class="cg-label">Aplicado (aa)</div>
+          <div class="cg-value" id="kv-l29-aa">—</div>
+        </div>
+        <div>
+          <div class="cg-label">Exigido (z)</div>
+          <div class="cg-value" id="kv-l29-z">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Tables -->
   <div class="tabelas-col">
@@ -508,23 +521,16 @@ function labelPeriodo(meses){
 // ─── Renderização dos KPIs ─────────────────────────────────────────────────
 function renderKPIs(meses){
   var r = aggData(meses, D.receita);
-  var f = aggData(meses, D.fundeb);
-  var last  = meses[meses.length-1];
-  var label = meses.length===1
-    ? 'Acumulado até '+MESES_NOME[last]
-    : meses.length+' meses acumulados (até '+MESES_NOME[last]+')';
+  var lastMes  = meses[meses.length-1];
+  var isUltBim = lastMes >= 11;
 
+  document.getElementById('kv-total').innerHTML  = fmtBi(calcL3(r));
   document.getElementById('kv-imp').innerHTML    = fmtBi(calcL1(r));
   document.getElementById('kv-transf').innerHTML = fmtBi(calcL2(r));
-  document.getElementById('kv-total').innerHTML  = fmtBi(calcL3(r));
-  document.getElementById('kv-fundeb20').innerHTML = fmtBi(calcFundeb20(r));
-  document.getElementById('kv-minimo').innerHTML   = fmtBi(calcMinimo(r));
-  document.getElementById('kv-fundrec').innerHTML  = fmtBi(sumFundeb(f));
 
-  document.getElementById('ks-imp').textContent    = label;
-  document.getElementById('ks-transf').textContent = label;
-  document.getElementById('ks-total').textContent  = label;
-  document.getElementById('ks-fundrec').textContent = label;
+  document.getElementById('ks-l28').textContent = isUltBim
+    ? 'Base: despesas empenhadas (d) — 6º bimestre'
+    : 'Base: despesas liquidadas (e)';
 }
 
 // ─── Tabela: Receita Resultante de Impostos ────────────────────────────────
@@ -1448,6 +1454,8 @@ function renderQ22a28(meses){
 
   document.getElementById('tbody-q22-28').innerHTML = html;
 
+  document.getElementById('kv-l28').innerHTML = fmtBi(l28);
+
   return l28; // reaproveitado pelo Quadro 10 (linha 29)
 }
 
@@ -1471,6 +1479,23 @@ function renderQ29(meses, l28){
 
   var cumprido = ab !== null && ab >= 25;
   var cls = ab===null ? 'ind-neutral' : (cumprido ? 'ind-ok' : 'ind-nok');
+
+  // Card L29
+  var cardEl = document.getElementById('kpi-l29');
+  var badge  = document.getElementById('kb-l29');
+  document.getElementById('kv-l29').textContent = ab===null ? '—' : fmtPct(ab);
+  document.getElementById('kv-l29-aa').innerHTML = fmtBi(aa);
+  document.getElementById('kv-l29-z').innerHTML  = fmtBi(z);
+  if(ab===null){
+    badge.textContent='—'; badge.className='kpi-badge';
+    cardEl.className='kpi-card destaque';
+  } else if(cumprido){
+    badge.textContent='✓ Meta Cumprida'; badge.className='kpi-badge ok';
+    cardEl.className='kpi-card destaque';
+  } else {
+    badge.textContent='✗ Abaixo do Mínimo'; badge.className='kpi-badge nok';
+    cardEl.className='kpi-card destaque abaixo';
+  }
 
   var html = '<tr class="'+cls+'">'
     +'<td class="name"><b style="color:#94a3b8;margin-right:6px">29</b>'

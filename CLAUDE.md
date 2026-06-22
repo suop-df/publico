@@ -245,6 +245,38 @@ git push
 
 ---
 
+## Projeção Fiscal (projecao_fiscal)
+
+Análise **offline** (não faz parte do pipeline gz/dashboards) para projetar a Receita
+Primária do GDF por 18 anos (2026–2043), destinada a instruir pleito de **operação de
+crédito junto ao FGC**.
+
+- **Metodologia completa:** `docs/metodologia_projecao_fiscal.md` (premissas, fontes,
+  fórmulas — manter sempre atualizado).
+- **Regras de classificação:** `tools/regra_projecao_fiscal.txt`.
+- **SQL:** `data/queries/projecao_fiscal.sql` — exercícios 2022–2026 de
+  `MIL2001.SALDOCONTABIL_EX` (coluna grafada `COXERCICIO`; o ETL aceita ambas as grafias).
+- **Scripts:**
+  - `etl_projecao_fiscal.py` — extrai/classifica a Receita Realizada por ano e gera a
+    aba "Realizado 2022-2026" no workbook de validação (reusa `init_oracle`/`fetch` de
+    `etl.py`). Grava em cópia com timestamp se o xlsx estiver aberto no Excel.
+  - `proj_modelo.py` — projeção híbrida 2026–2043 (não acessa Oracle; lê o workbook).
+- **Modelo:** base 2025 (ano cheio); receitas correntes por driver (PIB nominal ×
+  elasticidade calibrada 2022→2025 / IPCA); Operação de Crédito exógena (R$ 6,6 bi em
+  2026, FGC); demais capitais por IPCA. Premissas macro do Focus/BCB.
+- **Saída:** `projecao_fiscal/Projecao Fiscal - Receita Realizada (validacao).xlsx`
+  (abas "Realizado 2022-2026" + "Projeções Fiscais").
+- **Despesa/Resultado Primário:** projetados sob cenário de ajuste fiscal (Pessoal a
+  IPCA+1,5% vegetativo; demais a IPCA; aporte BRB R$ 6,6 bi em 2026 como Inversão
+  Financeira/não primária — não afeta o primário; nova dívida FGC com carência de 18m,
+  juros IPCA+4%, SAC 15a). Result. Primário −0,9 bi (2026, estrutural) → +37,5 bi (2043).
+  Ver `docs/metodologia_projecao_fiscal.md` §7.
+- **Status:** Receita e Despesa/Resultado Primário concluídos (códigos validados pela
+  ContDF). Pendente: aba "Operações Propostas" (cronograma FGC) e confronto com despesa
+  paga do RREO.
+
+---
+
 ## Roadmap
 
 ### ✅ Concluído
@@ -265,6 +297,12 @@ git push
 **Filtro Bimestral nos Dashboards**
 - Adicionar visualização "no mês" além do atual "acumulado até o mês"
 - Analisado e adiado por decisão do usuário
+
+**Projeção Fiscal — etapas restantes**
+- Aba "Operações Propostas" (cronograma FGC detalhado)
+- Confronto do Resultado Primário com despesa PAGA (a+b+c) do RREO
+- Refino das elasticidades de receita que batem no teto (1,5)
+- (Concluídos: Receita; Despesa Primária e Resultado Primário sob cenário de ajuste)
 
 ---
 
