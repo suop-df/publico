@@ -1572,6 +1572,18 @@ def build_minimo_educacao_data(rows):
             if is_ressarc:                          return "f64_ressarc"
         return None
 
+    def _is_superavit_fundeb(r, co_row, fr_suf):
+        """Despesa da unidade do FUNDEB (couo 18903) custeada com superávit
+        (cofonte de exercícios anteriores, prefixo '3') cujo COFONTEFEDERAL não
+        é 54x. O CASE do SQL a rotula CO=1001 (casa antes do ramo 1070), mas o
+        RREO oficial a classifica no FUNDEB (Quadro 10), não no Quadro 20. É o
+        único caso em que couo 18903 + cofonte 3xx tem fr_suf fora de FR_FUNDEB
+        (validado contra o Anexo 8 do 2º bim/2026 — linhas 10/20/21)."""
+        return (co_row == "1001"
+                and str(r.get("couo") or "").strip() == "18903"
+                and str(r.get("cofonte") or "")[:1] == "3"
+                and fr_suf not in FR_FUNDEB)
+
     for r in rows:
         # ── Separar ano corrente vs ano anterior ─────────────────────────────
         inano = int(r.get("inano") or ano_atual)
@@ -1657,6 +1669,7 @@ def build_minimo_educacao_data(rows):
             subfunc = str(r.get("cosubfuncao") or "").strip()
             cofunc  = str(r.get("cofuncao")    or "").strip()
             nd_ok   = nd_row[:8] not in ND_EXCL_PROF
+            sup_fdb = _is_superavit_fundeb(r, co_row, fr_suf)
 
             if subfunc in SUBFUNC_TRANSP:
                 sub_key = "transp"
@@ -1665,18 +1678,20 @@ def build_minimo_educacao_data(rows):
             else:
                 sub_key = "outras"
 
-            # FR fundeb tem prioridade: CO=1001 com FR=540 ainda é Quadro 10
-            if fr_suf in FR_FUNDEB or co_row == "1070":
+            # FR fundeb tem prioridade: CO=1001 com FR=540 ainda é Quadro 10.
+            # sup_fdb: FUNDEB-superávit da UO 18903 que o CASE rotulou 1001 (ver
+            # _is_superavit_fundeb) — o RREO oficial o conta no Quadro 10.
+            if fr_suf in FR_FUNDEB or co_row == "1070" or sup_fdb:
                 is_prof = nd_row[:2] == "31" and nd_row[:8] not in ND_EXCL_PROF
                 grupo   = "prof" if is_prof else "outras"
                 desp_real_1070[mes][grupo][sub_key]["dot_atu"] += saldo
             elif co_row == "1001":
                 desp_real_1001[mes][sub_key]["dot_atu"] += saldo
 
-            # Quadro 20: CO=1001, FR 500/502/718, nd_ok
+            # Quadro 20: CO=1001, FR 500/502/718, nd_ok (exceto FUNDEB-superávit)
             #   cofuncao=12 → subfunções individuais + catchall "outras"
             #   cofuncao=28 + cosubfuncao 843/844 → "outras" (mesmo que 10.2.8)
-            if co_row == "1001" and fr_suf in FR_Q20 and nd_ok:
+            if co_row == "1001" and fr_suf in FR_Q20 and nd_ok and not sup_fdb:
                 if cofunc == "12":
                     q20k = "transp" if subfunc == Q20_TRANSP \
                            else (subfunc if subfunc in Q20_SUBS else "outras")
@@ -1687,9 +1702,10 @@ def build_minimo_educacao_data(rows):
                 if q20k:
                     desp_real_q20[mes][q20k]["dot_atu"] += saldo
 
-            # Quadro 21: (CO=1001 e FR 500/502/718) OU FR FUNDEB, cofuncao=12, nd_ok
+            # Quadro 21: (CO=1001 e FR 500/502/718) OU FR FUNDEB OU FUNDEB-superávit
             if cofunc == "12" and nd_ok and \
-               ((co_row == "1001" and fr_suf in FR_Q20) or fr_suf in FR_FUNDEB):
+               ((co_row == "1001" and fr_suf in FR_Q20) or fr_suf in FR_FUNDEB
+                or sup_fdb):
                 coproj_q21 = str(r.get("coprojeto")   or "").strip()
                 cosubt_q21 = str(r.get("cosubtitulo") or "").strip()
                 q21k = _q21_key(subfunc, coproj_q21, cosubt_q21)
@@ -1712,6 +1728,7 @@ def build_minimo_educacao_data(rows):
             cc7 = cc_raw[:7]
 
             is_prof = nd_row[:2] == "31" and nd_row[:8] not in ND_EXCL_PROF
+            sup_fdb = _is_superavit_fundeb(r, co_row, fr_suf)
 
             def _acc(bucket):
                 bucket[sub_key]["emp"] += saldo
@@ -1728,8 +1745,9 @@ def build_minimo_educacao_data(rows):
                     b["pago"] += saldo
 
             # ── Quadro 10 ──────────────────────────────────────────────────
-            # FR fundeb tem prioridade: CO=1001 com FR=540 ainda é Quadro 10
-            if fr_suf in FR_FUNDEB or co_row == "1070":
+            # FR fundeb tem prioridade: CO=1001 com FR=540 ainda é Quadro 10.
+            # sup_fdb: FUNDEB-superávit da UO 18903 rotulado 1001 pelo CASE.
+            if fr_suf in FR_FUNDEB or co_row == "1070" or sup_fdb:
                 grupo = "prof" if is_prof else "outras"
                 _acc(desp_real_1070[mes][grupo])
             elif co_row == "1001":
@@ -1767,7 +1785,7 @@ def build_minimo_educacao_data(rows):
             # dotação — sem exigir FR_Q20, pois o oficial filtra por fonte
             # resumida (já garantida pelo CO=1001) e não por COFONTEFEDERAL.
             cofunc = str(r.get("cofuncao") or "").strip()
-            if co_row == "1001" and nd_ok and \
+            if co_row == "1001" and nd_ok and not sup_fdb and \
                (fr_suf in FR_Q20 or nd_row[:8] in ND8_EXCL_MDE):
                 if cofunc == "12":
                     q20k = "transp" if subfunc == Q20_TRANSP \
@@ -1804,7 +1822,8 @@ def build_minimo_educacao_data(rows):
             # Diferença: aqui as fatias de fontes 1021/1002 (FR 1540) JÁ estão
             # na base via FR_FUNDEB — para essas basta não somar; a subtração
             # só se aplica a fatia fora da base do quadro.
-            q21_base = (co_row == "1001" and fr_suf in FR_Q20) or fr_suf in FR_FUNDEB
+            q21_base = (co_row == "1001" and fr_suf in FR_Q20) or fr_suf in FR_FUNDEB \
+                       or sup_fdb
             q21_nd8  = co_row == "1001" and nd_row[:8] in ND8_EXCL_MDE
             if cofunc == "12" and nd_ok and (q21_base or q21_nd8):
                 coproj_q21 = str(r.get("coprojeto")   or "").strip()
