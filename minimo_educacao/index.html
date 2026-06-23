@@ -701,10 +701,20 @@ var ROWS_FUND = [
    function(f,r){ return calcL7(f,r); }],
 ];
 
+// L8.1 vigente no bimestre selecionado (re-apurado ao longo do ano).
+// bim = ceil(último mês / 2). Fallback para o último valor conhecido.
+function l81DoBim(meses){
+  var sv = D.superavit || {};
+  var m  = sv.l8_1_por_bim || {};
+  if(!meses || !meses.length) return 0;
+  var bim = Math.ceil(Math.max.apply(null, meses) / 2);
+  return m[String(bim)] || 0;
+}
+
 function renderSuperavit(meses){
   var sv  = D.superavit || {};
-  // L8.1 / L8.2 — constantes manuais (config no etl.py)
-  var l81 = sv.l8_1 || 0;
+  // L8.1 vigente no bimestre + L8.2 (residual)
+  var l81 = l81DoBim(meses);
   var l82 = sv.l8_2 || 0;
   var l8  = l81 + l82;
 
@@ -1161,7 +1171,7 @@ function renderL18(meses){
 function calcSuperavit(meses){
   var sv  = D.superavit || {};
   var ap  = D.superavit_aplicado || {};
-  var t   = (sv.t_191 || 0) + (sv.t_192 || 0);
+  var t   = l81DoBim(meses) + (sv.t_192 || 0);  // (t) = L8.1(bim) + L8.2
   var u = 0, v = 0;
   (meses || []).forEach(function(m){
     var val = ap[String(m)] || 0;
@@ -1176,7 +1186,8 @@ function renderL19(meses){
   var sv   = D.superavit || {};
   var S    = calcSuperavit(meses);
   var s191 = sv.ant   || 0, s192 = sv.s_192 || 0, s19 = S.s;
-  var t191 = sv.t_191 || 0, t192 = sv.t_192 || 0, t19 = S.t;
+  // (t) é todo FUNDEB-Impostos (19.1); 19.2 = 0
+  var t191 = S.t, t192 = 0, t19 = S.t;
   // (u),(v) são FUNDEB-Impostos (19.1); 19.2 = 0
   var u191 = S.u, u192 = 0, u19 = S.u;
   var v191 = S.v, v192 = 0, v19 = S.v;

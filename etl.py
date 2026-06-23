@@ -1393,12 +1393,22 @@ def build_minimo_educacao_data(rows):
 
     # L8.1 / L8.2 = SUPERÁVIT DO EXERCÍCIO IMEDIATAMENTE ANTERIOR / RESIDUAL
     #   mil2001.saldocontabil_ex não retém dados de ano_atual-2, então L8 não é
-    #   calculável automaticamente — informado manualmente a cada ano, a partir
-    #   do L8 (8.1+8.2) publicado no RREO. O valor é re-apurado ao longo do ano
-    #   conforme o fechamento do balanço do exercício anterior (ex.: 2026 foi
-    #   revisado de 31.361.102,40 no 1º bim para 32.347.113,94 a partir do 2º bim).
-    MDE_SUPERAVIT_8_1 = 32347113.94   # 8.1 — superávit do exercício imediatamente anterior
+    #   calculável automaticamente — informado manualmente, a partir do L8 (8.1+8.2)
+    #   publicado no RREO. É re-apurado ao longo do ano conforme o fechamento do
+    #   balanço do exercício anterior, então cada BIMESTRE usa o valor vigente no
+    #   seu próprio RREO. MDE_SUPERAVIT_8_1_POR_BIM mapeia bim→valor; bimestres
+    #   sem entrada herdam o último valor informado (fill-forward).
+    #   2026: 31.361.102,40 (1º bim) → 32.347.113,94 (a partir do 2º bim).
+    MDE_SUPERAVIT_8_1_POR_BIM = {1: 31361102.40, 2: 32347113.94}
     MDE_SUPERAVIT_8_2 = 0.00          # 8.2 — superávit residual de outros exercícios
+
+    def _l81_por_bim():
+        out, last = {}, 0.0
+        for bim in range(1, 7):
+            if bim in MDE_SUPERAVIT_8_1_POR_BIM:
+                last = MDE_SUPERAVIT_8_1_POR_BIM[bim]
+            out[str(bim)] = round(last, 2)
+        return out
 
     # Acumulador de receita FUNDEB do ano anterior para L19(s)
     # L19(s) = 10% × receita FUNDEB do ano anterior
@@ -1956,18 +1966,17 @@ def build_minimo_educacao_data(rows):
         # no dashboard a partir de superavit_aplicado (por período selecionado):
         #   (u) = Σ aplicado[m], m≤4 ; (v) = Σ aplicado[m], m>4
         #   (w) = max(0, t−u−v) ; (x) = max(0, t−u) ; L25 = (x)
-        "superavit": (lambda s191, s192, l8: {
+        "superavit": (lambda s191, s192: {
             # L19(s) = 10% × receita FUNDEB ano anterior (19.1/19.2)
             "ant":      round(s191, 2),
             "s_192":    round(s192, 2),
-            # L8.1 / L8.2 — constantes manuais (config no etl.py)
-            "l8_1":     round(MDE_SUPERAVIT_8_1, 2),
+            # L8.1 por bimestre (re-apuração) + L8.2. O dashboard escolhe o L8.1
+            # vigente conforme o bimestre selecionado; (t) = L8.1(bim) + L8.2.
+            "l8_1_por_bim": _l81_por_bim(),
             "l8_2":     round(MDE_SUPERAVIT_8_2, 2),
             "residual": round(MDE_SUPERAVIT_8_2, 2),
-            # L19(t) = L8 (8.1+8.2) — superávit do exercício anterior (base)
-            "t_191": round(l8, 2), "t_192": 0.0,
-        })(fundeb_ant["f61"] * 0.10, fundeb_ant["f_1715"] * 0.10,
-           MDE_SUPERAVIT_8_1 + MDE_SUPERAVIT_8_2),
+            "t_192": 0.0,
+        })(fundeb_ant["f61"] * 0.10, fundeb_ant["f_1715"] * 0.10),
         # Superávit do FUNDEB aplicado por mês (empenho cofonte 3xx) → (u)/(v)
         "superavit_aplicado": {
             str(m): round(superavit_aplicado[m], 2) for m in range(1, max_mes + 1)

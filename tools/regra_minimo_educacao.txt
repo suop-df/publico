@@ -84,13 +84,13 @@ QUADRO FUNDEB
 QUADRO RECURSOS RECEBIDOS EM EXERCÍCIOS ANTERIORES E NÃO UTILIZADOS (SUPERÁVIT)
 ========================================================================
 8- TOTAL DOS RECURSOS DE SUPERÁVIT: somatório L8.1 + L8.2
-8.1- SUPERÁVIT DO EXERCÍCIO IMEDIATAMENTE ANTERIOR (NÃO APLICADO): valor fixo, informado
-     manualmente a cada exercício (constante MDE_SUPERAVIT_8_1 no etl.py).
+8.1- SUPERÁVIT DO EXERCÍCIO IMEDIATAMENTE ANTERIOR (NÃO APLICADO): valor informado
+     manualmente, POR BIMESTRE (dict MDE_SUPERAVIT_8_1_POR_BIM no etl.py).
      Não é calculável a partir do Oracle (mil2001.saldocontabil_ex não retém dados de
-     ano_atual-2). Atualizar com base no L8 publicado no RREO. Pode ser RE-APURADO ao
-     longo do ano conforme o fechamento do balanço do exercício anterior — em 2026 foi
-     revisado de 31.361.102,40 (1º bim) para 32.347.113,94 (a partir do 2º bim).
-     Valor atual: 32.347.113,94
+     ano_atual-2). É RE-APURADO ao longo do ano conforme o fechamento do balanço do
+     exercício anterior, então cada bimestre usa o valor vigente no seu próprio RREO
+     (o dashboard escolhe pelo bimestre selecionado; bimestres sem entrada herdam o
+     último valor — fill-forward). 2026: {1: 31.361.102,40, 2: 32.347.113,94}.
 
 8.2- SUPERÁVIT RESIDUAL DE OUTROS EXERCÍCIOS: valor fixo, informado manualmente
      (constante MDE_SUPERAVIT_8_2 no etl.py). Valor atual: 0,00
