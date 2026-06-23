@@ -87,8 +87,10 @@ QUADRO RECURSOS RECEBIDOS EM EXERCÍCIOS ANTERIORES E NÃO UTILIZADOS (SUPERÁVI
 8.1- SUPERÁVIT DO EXERCÍCIO IMEDIATAMENTE ANTERIOR (NÃO APLICADO): valor fixo, informado
      manualmente a cada exercício (constante MDE_SUPERAVIT_8_1 no etl.py).
      Não é calculável a partir do Oracle (mil2001.saldocontabil_ex não retém dados de
-     ano_atual-2). Atualizar anualmente com base no L8 publicado no RREO do exercício
-     anterior. Valor atual: 31.361.102,40
+     ano_atual-2). Atualizar com base no L8 publicado no RREO. Pode ser RE-APURADO ao
+     longo do ano conforme o fechamento do balanço do exercício anterior — em 2026 foi
+     revisado de 31.361.102,40 (1º bim) para 32.347.113,94 (a partir do 2º bim).
+     Valor atual: 32.347.113,94
 
 8.2- SUPERÁVIT RESIDUAL DE OUTROS EXERCÍCIOS: valor fixo, informado manualmente
      (constante MDE_SUPERAVIT_8_2 no etl.py). Valor atual: 0,00
@@ -193,8 +195,13 @@ COLUNAS:
 VALOR DE SUPERÁVIT PERMITIDO NO EXERCÍCIO ANTERIOR (s): 10% × receita FUNDEB do exercício
    anterior — fórmula calculada (vide 19.1(s)/19.2(s) abaixo)
 VALOR NÃO APLICADO NO EXERCÍCIO ANTERIOR (t): = L8 (8.1 + 8.2) — vide 19.1(t)/19.2(t) abaixo
-VALOR DE SUPERÁVIT APLICADO ATÉ O PRIMEIRO QUADRIMESTRE (u): COCONTACONTABIL IN (622130300,622130400,622130700,853230000). Total das despesas executadas até o primeiro quadrimestre — pendente de implementação
-VALOR APLICADO APÓS O PRIMEIRO QUADRIMESTRE (v): Não há valor até o 1º quadrimestre. A partir de então (a partir do RREO 3º bimestre) o saldo da diferença entre o executado e o liquidado do 1º quadrimestre deve ser informado nessa 							coluna — pendente de implementação
+VALOR DE SUPERÁVIT APLICADO ATÉ O PRIMEIRO QUADRIMESTRE (u): superávit do FUNDEB aplicado =
+   despesa do Quadro 10 (FUNDEB) custeada com recursos de exercícios anteriores, identificada
+   por COFONTE de prefixo '3' (superávit financeiro), empenhada (SUBSTR(cocontacontabil,1,5)='62213').
+   Acumulada por mês no etl.py (superavit_aplicado[m]); (u) = soma dos meses 1 a 4 (1º quadrimestre).
+   IMPLEMENTADO. Confere ao centavo com o RREO 2º bim/2026: 32.347.113,94.
+VALOR APLICADO APÓS O PRIMEIRO QUADRIMESTRE (v): mesma origem de (u), soma dos meses > 4.
+   IMPLEMENTADO (dinâmico por período no dashboard).
 VALOR TOTAL DE SUPERÁVIT NÃO APLICADO ATÉ O FINAL DO EXERCÍCIO (w) = MAX(0, (t) - (u) - (v)) — vide 19.1(w)/19.2(w) abaixo
 VALOR DE SUPERÁVIT PERMITIDO NO EXERCÍCIO ANTERIOR NÃO APLICADO ATÉ O PRIMEIRO QUADRIMESTRE DO EXERCÍCIO ATUAL (x) = MAX(0, (t) - (u)) — vide 19.1(x)/19.2(x) abaixo
 
@@ -207,16 +214,19 @@ LINHAS:
           Parte 2: COCONTACONTABIL IN (621200000, 621300000); SUBSTR(TO_CHAR(cofonte),1,3) = '122'
           Fonte: mil2001.saldocontabil_ex, coexercicio = ano corrente - 1
    (t) = L8 (8.1 + 8.2) — mesmas constantes manuais MDE_SUPERAVIT_8_1 / MDE_SUPERAVIT_8_2
-   (u) = pendente de implementação (fixo em 0,00 por enquanto)
-   (v) = pendente de implementação (fixo em 0,00 por enquanto)
-   (w) = MAX(0, (t) - (u) - (v)) = (t), enquanto (u) e (v) = 0
-   (x) = MAX(0, (t) - (u)) = (t), enquanto (u) = 0
+   (u) = superávit aplicado até o 1º quadrimestre (soma de superavit_aplicado dos meses 1-4)
+   (v) = superávit aplicado após o 1º quadrimestre (soma dos meses > 4)
+   (w) = MAX(0, (t) - (u) - (v))
+   (x) = MAX(0, (t) - (u))
+   OBS: (u),(v),(w),(x) e L25 são derivados no dashboard por período selecionado, a partir
+        de superavit_aplicado (por mês) e da base (t). Antes de o superávit ser aplicado,
+        (u)=(v)=0 e (w)=(x)=(t); quando aplicado >= (t), (w)=(x)=0 e L25=0 automaticamente.
  19.2- Total das Despesas custeadas com FUNDEB - Complementação da União (VAAF + VAAT):
    (s) = 10% × [COCONTACONTABIL IN (621200000, 621300000); SUBSTR(cocontacorrente,1,4) = '1715']          
           Fonte: mil2001.saldocontabil_ex, coexercicio = ano corrente - 1
    (t) = 0,00 (fixo)
-   (u) = pendente de implementação (fixo em 0,00 por enquanto)
-   (v) = pendente de implementação (fixo em 0,00 por enquanto)
+   (u) = 0,00 (toda aplicação de superávit é FUNDEB-Impostos, classificada em 19.1)
+   (v) = 0,00
    (w) = MAX(0, (t) - (u) - (v)) = 0,00
    (x) = MAX(0, (t) - (u)) = 0,00
 

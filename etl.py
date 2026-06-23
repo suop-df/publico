@@ -1394,8 +1394,10 @@ def build_minimo_educacao_data(rows):
     # L8.1 / L8.2 = SUPERÁVIT DO EXERCÍCIO IMEDIATAMENTE ANTERIOR / RESIDUAL
     #   mil2001.saldocontabil_ex não retém dados de ano_atual-2, então L8 não é
     #   calculável automaticamente — informado manualmente a cada ano, a partir
-    #   do L8 (8.1+8.2) publicado no RREO do exercício anterior.
-    MDE_SUPERAVIT_8_1 = 31361102.40   # 8.1 — superávit do exercício imediatamente anterior
+    #   do L8 (8.1+8.2) publicado no RREO. O valor é re-apurado ao longo do ano
+    #   conforme o fechamento do balanço do exercício anterior (ex.: 2026 foi
+    #   revisado de 31.361.102,40 no 1º bim para 32.347.113,94 a partir do 2º bim).
+    MDE_SUPERAVIT_8_1 = 32347113.94   # 8.1 — superávit do exercício imediatamente anterior
     MDE_SUPERAVIT_8_2 = 0.00          # 8.2 — superávit residual de outros exercícios
 
     # Acumulador de receita FUNDEB do ano anterior para L19(s)
@@ -1449,6 +1451,13 @@ def build_minimo_educacao_data(rows):
     GRUPOS_1070 = ("prof", "outras")
     desp_dot_1070  = {g: _sub_bucket() for g in GRUPOS_1070}
     desp_real_1070 = {m: {g: _sub_bucket() for g in GRUPOS_1070} for m in range(1, 13)}
+
+    # L19 (u)/(v): superávit do FUNDEB APLICADO no exercício, por mês.
+    # = despesa FUNDEB (Quadro 10) custeada com recursos de exercícios anteriores
+    # (cofonte prefixo '3' = superávit financeiro), empenhada. (u) é a parcela
+    # aplicada até o 1º quadrimestre (meses 1-4); (v) a parcela após. O dashboard
+    # agrega por período e deriva (w)=max(0,t-u-v), (x)=max(0,t-u), L25=(x).
+    superavit_aplicado = {m: 0.0 for m in range(1, 13)}
 
     # Quadro 20: Despesas MDE custeadas com Receitas de Impostos (exceto FUNDEB)
     # FR: 500 | 502 | 718  +  CO: 1001  +  COFUNCAO: 12
@@ -1750,6 +1759,10 @@ def build_minimo_educacao_data(rows):
             if fr_suf in FR_FUNDEB or co_row == "1070" or sup_fdb:
                 grupo = "prof" if is_prof else "outras"
                 _acc(desp_real_1070[mes][grupo])
+                # L19(u)/(v): parcela do FUNDEB custeada com superávit (cofonte
+                # de exercícios anteriores, prefixo '3') = superávit aplicado.
+                if str(r.get("cofonte") or "")[:1] == "3":
+                    superavit_aplicado[mes] += saldo
             elif co_row == "1001":
                 _acc(desp_real_1001[mes])
 
@@ -1938,6 +1951,11 @@ def build_minimo_educacao_data(rows):
         "q21":             q21,
         "q30":             q30,
         "indicadores":     indicadores,
+        # L19 — Aplicação do Superávit de Exercício Anterior (Art.25 §3 LC 14.113).
+        # (s)/(t) são constantes de apuração; (u)/(v)/(w)/(x) e L25 são derivados
+        # no dashboard a partir de superavit_aplicado (por período selecionado):
+        #   (u) = Σ aplicado[m], m≤4 ; (v) = Σ aplicado[m], m>4
+        #   (w) = max(0, t−u−v) ; (x) = max(0, t−u) ; L25 = (x)
         "superavit": (lambda s191, s192, l8: {
             # L19(s) = 10% × receita FUNDEB ano anterior (19.1/19.2)
             "ant":      round(s191, 2),
@@ -1946,15 +1964,14 @@ def build_minimo_educacao_data(rows):
             "l8_1":     round(MDE_SUPERAVIT_8_1, 2),
             "l8_2":     round(MDE_SUPERAVIT_8_2, 2),
             "residual": round(MDE_SUPERAVIT_8_2, 2),
-            # L19.1(t)/(w)/(x) = L8 (8.1+8.2); L19.2(t)/(w)/(x) = 0
+            # L19(t) = L8 (8.1+8.2) — superávit do exercício anterior (base)
             "t_191": round(l8, 2), "t_192": 0.0,
-            # (u)/(v) ainda não implementados (despesas com superávit aplicado no ano)
-            "u_191": 0.0, "u_192": 0.0,
-            "v_191": 0.0, "v_192": 0.0,
-            "w_191": round(l8, 2), "w_192": 0.0,
-            "x_191": round(l8, 2), "x_192": 0.0,
         })(fundeb_ant["f61"] * 0.10, fundeb_ant["f_1715"] * 0.10,
            MDE_SUPERAVIT_8_1 + MDE_SUPERAVIT_8_2),
+        # Superávit do FUNDEB aplicado por mês (empenho cofonte 3xx) → (u)/(v)
+        "superavit_aplicado": {
+            str(m): round(superavit_aplicado[m], 2) for m in range(1, max_mes + 1)
+        },
     }
 
 

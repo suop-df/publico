@@ -1153,24 +1153,35 @@ function renderL18(meses){
 }
 
 // ─── Quadro 6c: Linhas 19/19.1/19.2 — Aplicação do Superávit de Exercício Anterior ─
-function renderL19(){
+// L19 — Superávit do FUNDEB. (s),(t) vêm da apuração; (u),(v),(w),(x) derivam
+// do superávit aplicado (empenho cofonte 3xx) agregado pelo período selecionado:
+//   (u) = Σ aplicado[m], m≤4 (1º quadrimestre) ; (v) = Σ aplicado[m], m>4
+//   (w) = MAX(0, t−u−v) ; (x) = MAX(0, t−u)
+// Toda aplicação é FUNDEB-Impostos (19.1); 19.2 (Complementação) = 0.
+function calcSuperavit(meses){
+  var sv  = D.superavit || {};
+  var ap  = D.superavit_aplicado || {};
+  var t   = (sv.t_191 || 0) + (sv.t_192 || 0);
+  var u = 0, v = 0;
+  (meses || []).forEach(function(m){
+    var val = ap[String(m)] || 0;
+    if(m <= 4) u += val; else v += val;
+  });
+  var w = Math.max(0, t - u - v);
+  var x = Math.max(0, t - u);
+  return {s:(sv.ant||0)+(sv.s_192||0), t:t, u:u, v:v, w:w, x:x};
+}
+
+function renderL19(meses){
   var sv   = D.superavit || {};
-  var s191 = sv.ant   || 0;          // L19.1(s) — já calculado (= L8.1)
-  var s192 = sv.s_192 || 0;          // L19.2(s)
-  var s19  = s191 + s192;            // L19(s) total
-
-  var t191 = sv.t_191 || 0;          // L19.1(t) — config manual (L8 do RREO ant.)
-  var t192 = sv.t_192 || 0;          // L19.2(t) — config manual (L8 do RREO ant.)
-  var t19  = t191 + t192;            // L19(t) total
-
-  // (u),(v): pendentes de implementação no ETL
-  var u191 = sv.u_191 || 0, u192 = sv.u_192 || 0, u19 = u191 + u192;
-  var v191 = sv.v_191 || 0, v192 = sv.v_192 || 0, v19 = v191 + v192;
-  // (w) = MAX(0, t-u-v) ; (x) = MAX(0, t-u)
-  var w191 = sv.w_191 || 0, w192 = sv.w_192 || 0, w19 = w191 + w192;
-  var x191 = sv.x_191 || 0, x192 = sv.x_192 || 0, x19 = x191 + x192;
-
-  var PEND = '—';
+  var S    = calcSuperavit(meses);
+  var s191 = sv.ant   || 0, s192 = sv.s_192 || 0, s19 = S.s;
+  var t191 = sv.t_191 || 0, t192 = sv.t_192 || 0, t19 = S.t;
+  // (u),(v) são FUNDEB-Impostos (19.1); 19.2 = 0
+  var u191 = S.u, u192 = 0, u19 = S.u;
+  var v191 = S.v, v192 = 0, v19 = S.v;
+  var w191 = S.w, w192 = 0, w19 = S.w;
+  var x191 = S.x, x192 = 0, x19 = S.x;
 
   document.getElementById('thead-ind-l19').innerHTML = '<tr>'
     +'<th class="left" style="min-width:460px">Especificação</th>'
@@ -1190,8 +1201,8 @@ function renderL19(){
       +nm+'</td>'
       +'<td class="'+cls+'">'+fmtNum(s)+'</td>'
       +'<td class="'+cls+'">'+fmtNum(t)+'</td>'
-      +'<td class="num pend">'+PEND+'</td>'
-      +'<td class="num pend">'+PEND+'</td>'
+      +'<td class="'+cls+'">'+fmtNum(u)+'</td>'
+      +'<td class="'+cls+'">'+fmtNum(v)+'</td>'
       +'<td class="'+cls+'">'+fmtNum(w)+'</td>'
       +'<td class="'+cls+'">'+fmtNum(x)+'</td>'
       +'</tr>';
@@ -1410,9 +1421,8 @@ function renderQ22a28(meses){
   var l24 = l18q;
 
   // L25 = L19(x) — Valor de Superávit Permitido no Exercício Anterior Não Aplicado
-  // até o 1º Quadrimestre do Exercício Atual = L19.1(x) + L19.2(x)
-  var sv25  = D.superavit || {};
-  var l25 = (sv25.x_191 || 0) + (sv25.x_192 || 0);
+  // até o 1º Quadrimestre do Exercício Atual = MAX(0, t − u) (ver calcSuperavit)
+  var l25 = calcSuperavit(meses).x;
 
   // L26 = informado somente no último bimestre
   var l26 = isUltBim ? 0 : null;
@@ -1565,7 +1575,7 @@ function refresh(){
   renderIndFundeb(meses);
   renderIndicadoresPct(meses);
   renderL18(meses);
-  renderL19();
+  renderL19(meses);
   renderQ20(meses);
   renderQ21(meses);
   renderQ30(meses);
