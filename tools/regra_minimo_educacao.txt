@@ -1,3 +1,20 @@
+================================================================================
+MANUTENÇÃO PERIÓDICA — L8.1 (Superávit do Exercício Anterior) POR BIMESTRE
+================================================================================
+A cada novo bimestre, conferir o L8.1 no RREO oficial e atualizar, SE MUDOU, o
+dict MDE_SUPERAVIT_8_1_POR_BIM em etl.py (função build_minimo_educacao_data):
+
+    MDE_SUPERAVIT_8_1_POR_BIM = {1: 31361102.40, 2: 32347113.94}
+
+- chave = nº do bimestre (1-6); valor = L8.1 do RREO daquele bimestre
+- só acrescentar entrada quando o valor MUDAR (fill-forward herda o anterior)
+- número sem separador de milhar, ponto decimal (32347113.94)
+- ano novo: zerar o dict começando pelo L8.1 do 1º bim do novo exercício
+- L8.2 (residual) = constante MDE_SUPERAVIT_8_2 (hoje 0,00), não é por bimestre
+- as colunas (u)/(v)/(w)/(x) do L19 e o L25 derivam sozinhos (não configurar)
+- testar só o MDE: py regen_mde_gz.py (regenera apenas o gz do MDE)
+
+
 REGRA GERAL:
 
 Contas que começam com número ímpar (1,3,5,7,9) possuem natureza devedora: SALDO = SUM(VADEBITO-VACREDITO)

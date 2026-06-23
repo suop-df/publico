@@ -245,6 +245,39 @@ git push
 
 ---
 
+## Mínimo Educação (MDE) — Manutenção periódica
+
+Dashboard `minimo_educacao/` (RREO Anexo 8). Regras completas em
+`tools/regra_minimo_educacao.txt`.
+
+### A cada novo bimestre: conferir o L8.1 (Superávit do Exercício Anterior)
+
+O L8.1 (linha 8.1 / base do L19 / L25) **não é calculável pelo Oracle** e é
+**re-apurado ao longo do ano**, então cada bimestre usa o valor vigente no seu
+RREO. É configurado no dict `MDE_SUPERAVIT_8_1_POR_BIM` em `etl.py`
+(função `build_minimo_educacao_data`):
+
+```python
+MDE_SUPERAVIT_8_1_POR_BIM = {1: 31361102.40, 2: 32347113.94}
+```
+
+- Chave = nº do bimestre (1–6); valor = L8.1 publicado no RREO daquele bimestre.
+- **Só adicione entrada quando o valor MUDAR** — bimestres sem entrada herdam o
+  último valor (fill-forward).
+- Número sem separador de milhar, ponto decimal (`32347113.94`).
+- Vira ano novo: zerar o dict, começando pelo L8.1 do 1º bim do novo exercício.
+- L8.2 (residual) = constante `MDE_SUPERAVIT_8_2` (hoje `0.00`), não é por bimestre.
+
+Após editar, o valor entra no dashboard na próxima execução do ETL. Para testar
+só o MDE sem rodar tudo: `py regen_mde_gz.py` (regenera apenas
+`data/gz/minimo_educacao.json.gz`).
+
+> As colunas (u)/(v)/(w)/(x) do L19 e o L25 são derivados automaticamente no
+> dashboard (superávit aplicado = empenho FUNDEB com cofonte 3xx) — não precisam
+> de configuração manual.
+
+---
+
 ## Projeção Fiscal (projecao_fiscal)
 
 Análise **offline** (não faz parte do pipeline gz/dashboards) para projetar a Receita
