@@ -218,6 +218,9 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
 var D;
 var MESES={1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',
            7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+function pad2(n){return (n<10?'0':'')+n;}
+function rotuloAnoMes(item){return item.ano+'/'+pad2(item.mes);}          // 2025/07
+function rotuloMesExt(item){return MESES[item.mes]+' '+item.ano;}          // Julho 2025
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fmtNum(v){
@@ -242,12 +245,11 @@ var lineChart;
 function renderChart(){
   if(!lineChart) lineChart=echarts.init(document.getElementById('line-chart'));
   var lim=D.limite_pct||95;
+  var serie=D.serie||[];
   var labels=[],values=[];
-  for(var m=1;m<=D.max_mes;m++){
-    var pm=D.por_mes[String(m)];
-    if(!pm) continue;
-    labels.push(MESES[m].substring(0,3));
-    values.push(pm.poupanca_pct!=null?pm.poupanca_pct:null);
+  for(var i=0;i<serie.length;i++){
+    labels.push(rotuloAnoMes(serie[i]));
+    values.push(serie[i].poupanca_pct!=null?serie[i].poupanca_pct:null);
   }
   var valid=values.filter(function(v){return v!=null;});
   if(!valid.length) return;
@@ -301,7 +303,7 @@ function renderChart(){
   });
 }
 
-function renderKPI(mes,pm){
+function renderKPI(pm){
   var pct=pm.poupanca_pct;
   var lim=D.limite_pct||95;
   var dentro=pct!=null&&pct<=lim;
@@ -313,7 +315,7 @@ function renderKPI(mes,pm){
   if(pct==null){badge.textContent='—';badge.className='kpi-badge';}
   else if(dentro){badge.textContent='Dentro do Limite';badge.className='kpi-badge s';}
   else{badge.textContent='Acima do Limite';badge.className='kpi-badge d';}
-  document.getElementById('ks-poupanca').textContent='Referência: '+MESES[mes]+' '+D.ano_atual;
+  document.getElementById('ks-poupanca').textContent='Referência: '+rotuloMesExt(pm)+' (janela 12m)';
   document.getElementById('kv-rec').textContent=fmtBi(pm.rec_corrente_12m);
   document.getElementById('kv-dep').textContent=fmtBi(pm.desp_corrente_12m);
   document.getElementById('kv-liq').textContent=fmtBi(pm.desp_liquidadas_12m);
@@ -323,17 +325,17 @@ function renderKPI(mes,pm){
 
 function renderTable(){
   var lim=D.limite_pct||95;
+  var serie=D.serie||[];
   var frags=[];
-  for(var m=1;m<=D.max_mes;m++){
-    var pm=D.por_mes[String(m)];
-    if(!pm) continue;
+  for(var i=0;i<serie.length;i++){
+    var pm=serie[i];
     var pct=pm.poupanca_pct;
     var dentro=pct!=null&&pct<=lim;
     var pctCls=pct==null?'':(dentro?'dentro':'acima');
     var sit=pct==null?'–':(dentro?'<span class="badge-sit s">Dentro do Limite</span>':'<span class="badge-sit d">Acima do Limite</span>');
     frags.push(
       '<tr>'
-      +'<td class="mes">'+m+' – '+escHtml(MESES[m])+'</td>'
+      +'<td class="mes">'+escHtml(rotuloAnoMes(pm))+'</td>'
       +'<td>'+fmtNum(pm.rec_corrente_12m)+'</td>'
       +'<td>'+fmtNum(pm.desp_corrente_12m)+'</td>'
       +'<td class="pct '+pctCls+'">'+fmtPct(pct)+'</td>'
@@ -353,9 +355,9 @@ function init(json){
     el.textContent='Dados atualizados em: '+d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
   }
   document.title='Poupança Corrente — GDF'+(D.ano_atual?' '+D.ano_atual:'');
-  var latestMes=D.max_mes;
-  var latestPm=D.por_mes[String(latestMes)]||{};
-  renderKPI(latestMes,latestPm);
+  var serie=D.serie||[];
+  var latestPm=serie.length?serie[serie.length-1]:{};
+  renderKPI(latestPm);
   renderChart();
   renderTable();
 }

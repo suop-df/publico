@@ -10,7 +10,7 @@
 --                           GND via SUBSTR(COCONTACORRENTE,1,1) IN (1,7)
 --                           1 = Correntes | 7 = Intraorçamentárias Correntes
 --
---   Despesas Liquidadas   : SUBSTR(COCONTACONTABIL,1,7) IN (6221303,6221304,6221307)
+--   Despesas Liquidadas   : COCONTACONTABIL IN (622130300,622130400)
 --                           GND via SUBSTR(CONATUREZA,2,1) IN (1,2,3)
 --
 --   RPNP Inscrito         : COCONTACONTABIL IN (631100000,631200000)
@@ -32,10 +32,7 @@ SELECT
     s.cocontacorrente,
     s.conatureza,
     s.vacredito,
-    s.vadebito,
-    (SELECT MAX(m.inmes)
-       FROM {SCHEMA_ANO}.mesfechado m
-      WHERE m.inmes BETWEEN 1 AND 12)  AS max_mes_fechado
+    s.vadebito
 FROM mil2001.saldocontabil_ex s
 WHERE (
 
@@ -47,7 +44,7 @@ WHERE (
   OR
 
     -- ── DESPESAS LIQUIDADAS (correntes) ─────────────────────────────────
-    (   SUBSTR(TO_CHAR(s.cocontacontabil), 1, 7) IN ('6221303', '6221304', '6221307')
+    (   s.cocontacontabil IN (622130300, 622130400)
     AND SUBSTR(s.conatureza, 2, 1) IN ('1', '2', '3')
     AND s.inmes BETWEEN 1 AND 12)
 
@@ -66,4 +63,4 @@ WHERE (
     AND s.inmes BETWEEN 1 AND 12)
 
 )
-AND s.coexercicio >= EXTRACT(YEAR FROM SYSDATE) - 1
+AND s.coexercicio >= EXTRACT(YEAR FROM SYSDATE) - 2

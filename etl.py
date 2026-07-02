@@ -763,18 +763,18 @@ def build_poupanca_corrente_data(rows):
     """
     Computa Poupança Corrente (Art. 167-A, CF) com janela móvel de 12 meses.
     Formula: (Desp. Liquidadas 12m + RPNP Inscrito - RPNP Cancelado) / Rec. Corrente 12m
-    """
-    ano_atual    = datetime.now().year
-    ano_anterior = ano_atual - 1
 
-    rec      = {ano_anterior: {m: 0.0 for m in range(1, 13)},
-                ano_atual:    {m: 0.0 for m in range(1, 13)}}
-    desp_liq = {ano_anterior: {m: 0.0 for m in range(1, 13)},
-                ano_atual:    {m: 0.0 for m in range(1, 13)}}
-    rpnp_ins = {ano_anterior: 0.0, ano_atual: 0.0}
-    rpnp_can = {ano_anterior: {m: 0.0 for m in range(1, 13)},
-                ano_atual:    {m: 0.0 for m in range(1, 13)}}
-    max_mes  = 0
+    A janela termina no ÚLTIMO MÊS COM DADO (D-1), fechado ou não — não depende
+    mais da tabela mesfechado. A série exposta cobre os 12 últimos meses,
+    identificados por (ano, mês), podendo cruzar o virador de exercício.
+    """
+    def _ano():
+        return {m: 0.0 for m in range(1, 13)}
+
+    rec      = {}   # rec[ano][mes]      receita corrente realizada
+    desp_liq = {}   # desp_liq[ano][mes] despesas liquidadas correntes
+    rpnp_can = {}   # rpnp_can[ano][mes] RPNP cancelado no exercício
+    rpnp_ins = {}   # rpnp_ins[ano]      RPNP inscrito no encerramento (inmes=0)
 
     for r in rows:
         cc   = str(r.get("cocontacontabil") or "").strip()
@@ -784,14 +784,6 @@ def build_poupanca_corrente_data(rows):
         ano  = int(r.get("coexercicio") or 0)
         vacr = float(r.get("vacredito") or 0)
         vad  = float(r.get("vadebito")  or 0)
-        mmf  = r.get("max_mes_fechado")
-        if mmf is not None:
-            try:
-                max_mes = max(max_mes, int(mmf))
-            except (ValueError, TypeError):
-                pass
-        if ano not in rec:
-            continue
         try:
             cc_int = int(cc)
         except (ValueError, TypeError):
@@ -802,49 +794,75 @@ def build_poupanca_corrente_data(rows):
         if (621200000 <= cc_int <= 621390199
                 and ccor[:1] in ('1', '7')
                 and 1 <= mes <= 12):
-            rec[ano][mes] += val
-        elif (cc[:7] in ('6221303', '6221304', '6221307')
+            rec.setdefault(ano, _ano())[mes] += val
+        elif (cc_int in (622130300, 622130400)
                 and nat2 in ('1', '2', '3')
                 and 1 <= mes <= 12):
-            desp_liq[ano][mes] += val
+            desp_liq.setdefault(ano, _ano())[mes] += val
         elif (cc_int in (631100000, 631200000)
                 and nat2 in ('1', '2', '3')
                 and mes == 0):
-            rpnp_ins[ano] += val
+            rpnp_ins[ano] = rpnp_ins.get(ano, 0.0) + val
         elif (cc_int == 631900000
                 and nat2 in ('1', '2', '3', '7')
                 and 1 <= mes <= 12):
-            rpnp_can[ano][mes] += val
+            rpnp_can.setdefault(ano, _ano())[mes] += val
 
-    if max_mes == 0:
-        max_mes = next((m for m in range(12, 0, -1)
-                        if rec[ano_atual][m] != 0.0), 1)
+    def g(d, ano, mes):
+        return d.get(ano, {}).get(mes, 0.0)
 
-    por_mes = {}
-    for mes in range(1, max_mes + 1):
-        rec_12m  = (sum(rec[ano_anterior][m]      for m in range(mes + 1, 13))
-                  + sum(rec[ano_atual][m]          for m in range(1, mes + 1)))
-        desp_12m = (sum(desp_liq[ano_anterior][m] for m in range(mes + 1, 13))
-                  + sum(desp_liq[ano_atual][m]     for m in range(1, mes + 1)))
-        rpnp_i   = rpnp_ins[ano_anterior]
-        rpnp_c   = sum(rpnp_can[ano_atual][m] for m in range(1, mes + 1))
+    # Mês de referência = último (ano, mês) com receita corrente movimentada.
+    ref = None
+    for ano, meses in rec.items():
+        for mes, v in meses.items():
+            if v != 0.0 and (ref is None or (ano, mes) > ref):
+                ref = (ano, mes)
+    if ref is None:
+        agora = datetime.now()
+        ref = (agora.year, agora.month)
+    ref_ano, ref_mes = ref
+
+    # Últimos 12 meses de referência (mais antigo -> mais recente).
+    ref_meses = []
+    yy, mm = ref_ano, ref_mes
+    for _ in range(12):
+        ref_meses.append((yy, mm))
+        mm -= 1
+        if mm == 0:
+            mm, yy = 12, yy - 1
+    ref_meses.reverse()
+
+    serie = []
+    for (y, m) in ref_meses:
+        # Janela móvel de 12 meses terminando em (y, m): (y-1, m+1) .. (y, m).
+        rec_12m  = (sum(g(rec, y - 1, k)      for k in range(m + 1, 13))
+                  + sum(g(rec, y, k)          for k in range(1, m + 1)))
+        desp_12m = (sum(g(desp_liq, y - 1, k) for k in range(m + 1, 13))
+                  + sum(g(desp_liq, y, k)     for k in range(1, m + 1)))
+        rpnp_i   = rpnp_ins.get(y, 0.0)                          # inscrito no encerramento do exerc. corrente
+        rpnp_c   = sum(g(rpnp_can, y, k) for k in range(1, m + 1))  # cancelado no exerc. corrente
         desp_cor = desp_12m + rpnp_i - rpnp_c
         pct      = round(desp_cor / rec_12m * 100, 2) if rec_12m else None
-        por_mes[str(mes)] = {
+        serie.append({
+            "ano":                 y,
+            "mes":                 m,
             "rec_corrente_12m":    round(rec_12m,  2),
             "desp_liquidadas_12m": round(desp_12m, 2),
             "rpnp_inscrito":       round(rpnp_i,   2),
             "rpnp_cancelado":      round(rpnp_c,   2),
             "desp_corrente_12m":   round(desp_cor, 2),
             "poupanca_pct":        pct,
-        }
+        })
 
-    log.info(f"  Poupança Corrente: max_mes={max_mes}, meses={list(por_mes.keys())}")
+    rotulos = ["{}/{:02d}".format(s["ano"], s["mes"]) for s in serie]
+    log.info("  Poupança Corrente: referência={}/{:02d}, série={}".format(
+        ref_ano, ref_mes, rotulos))
     return {
-        "ano_atual":  ano_atual,
-        "max_mes":    max_mes,
+        "ano_atual":  ref_ano,
+        "ref_ano":    ref_ano,
+        "ref_mes":    ref_mes,
         "limite_pct": 95.0,
-        "por_mes":    por_mes,
+        "serie":      serie,
     }
 
 
