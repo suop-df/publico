@@ -52,7 +52,7 @@ body{
 .kpi-card.accent .kpi-sub{color:rgba(255,255,255,.6)}
 
 /* ═══ CHARTS ═══ */
-.charts-row{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-bottom:20px}
+.charts-row{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:20px}
 .charts-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
 .chart-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;transition:box-shadow .2s}
 .chart-panel:hover{box-shadow:var(--shadow-md)}
@@ -96,7 +96,7 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
 .footer{text-align:center;padding:16px 28px;font-size:.68rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6}
 
 /* ═══ RESPONSIVE ═══ */
-@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(2,1fr)}.charts-row,.charts-row-2{grid-template-columns:1fr}}
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(2,1fr)}.charts-row-2{grid-template-columns:1fr}}
 @media(max-width:768px){.kpi-row{grid-template-columns:1fr}.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}}
 @media print{.table-search{display:none!important}.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}.kpi-card,.chart-panel,.table-panel{break-inside:avoid}}
 </style>
@@ -138,7 +138,7 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
       <div class="kpi-sub" id="kpi-1-sub"></div>
     </div>
     <div class="kpi-card" id="kpi-2">
-      <div class="kpi-label">PREVISÃO ATUALIZADA</div>
+      <div class="kpi-label">RCL AJUST. LIMITE ENDIVIDAMENTO (VI)</div>
       <div class="kpi-value" id="kpi-2-value">—</div>
       <div class="kpi-sub" id="kpi-2-sub"></div>
     </div>
@@ -148,23 +148,18 @@ tr:hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!impo
       <div class="kpi-sub" id="kpi-3-sub"></div>
     </div>
     <div class="kpi-card accent" id="kpi-4">
-      <div class="kpi-label">EXECUÇÃO (REAL. / PREV.)</div>
+      <div class="kpi-label">RCL AJUST. LIMITE DESP. PESSOAL (X)</div>
       <div class="kpi-value" id="kpi-4-value">—</div>
       <div class="kpi-sub" id="kpi-4-sub"></div>
     </div>
   </div>
 
-  <!-- Charts Row 1: Line Evolution + Gauge -->
+  <!-- Charts Row 1: Line Evolution -->
   <div class="charts-row">
     <div class="chart-panel">
       <div class="chart-panel-title">Evolução Mensal da RCL</div>
       <div class="chart-panel-subtitle">Receita Corrente Líquida — últimos 12 meses (R$ Milhões)</div>
       <div id="chart-line" style="width:100%;height:320px;"></div>
-    </div>
-    <div class="chart-panel" style="display:flex;flex-direction:column;align-items:center;">
-      <div class="chart-panel-title" style="align-self:flex-start;">Execução da RCL</div>
-      <div class="chart-panel-subtitle" style="align-self:flex-start;">Realizado 12m / Previsão Atualizada</div>
-      <div id="chart-gauge" style="width:260px;height:260px;"></div>
     </div>
   </div>
 
@@ -242,6 +237,7 @@ function sumLinha(key, cols) {
 }
 
 // Configura botões: habilitados/desabilitados conforme ref_mes
+// (exige os 2 meses do bimestre fechados/com dado antes de habilitá-lo)
 function setupBimestreBar() {
   const refMes = D.ref_mes || 0;
   for (let b = 1; b <= 6; b++) {
@@ -287,7 +283,7 @@ function refresh() {
 // ═══════════════════════════════════════════════════════════════
 // CHARTS
 // ═══════════════════════════════════════════════════════════════
-let cLine, cGauge, cStacked, cTreemap;
+let cLine, cStacked, cTreemap;
 
 // ═══════════════════════════════════════════════════════════════
 // UTILITIES
@@ -317,12 +313,11 @@ function onSearchTable(){
 // ═══════════════════════════════════════════════════════════════
 function init(){
   cLine    = echarts.init(document.getElementById('chart-line'));
-  cGauge   = echarts.init(document.getElementById('chart-gauge'));
   cStacked = echarts.init(document.getElementById('chart-stacked'));
   cTreemap = echarts.init(document.getElementById('chart-treemap'));
 
   window.addEventListener('resize',()=>{
-    cLine.resize();cGauge.resize();cStacked.resize();cTreemap.resize();
+    cLine.resize();cStacked.resize();cTreemap.resize();
   });
 
   // Mapa coluna → rótulo (cobre todos os meses exportados)
@@ -347,25 +342,25 @@ function updatePeriodBadge(cols){
 // KPIs
 // ═══════════════════════════════════════════════════════════════
 function renderKPIs(cols){
-  const rcl12   = sumLinha('rcl',  cols);
-  const prev    = D.previsao.rcl;
-  const fcdf12  = sumLinha('fcdf', cols);
-  const recCorr = sumLinha('receitas_correntes', cols);
-  const ded     = sumLinha('deducoes', cols);
-  const pct     = prev > 0 ? (rcl12 / prev * 100) : 0;
-  const lbl12   = activeBimestre !== null ? '12m até ' + colToRotulo[cols[cols.length-1]] : '12 meses';
+  const rcl12      = sumLinha('rcl',  cols);
+  const fcdf12     = sumLinha('fcdf', cols);
+  const recCorr    = sumLinha('receitas_correntes', cols);
+  const ded        = sumLinha('deducoes', cols);
+  const emendasInd = sumLinha('emendas_ind', cols);
+  const rclEndiv   = sumLinha('rcl_endiv', cols);
+  const rclPessoal = sumLinha('rcl_pessoal', cols);
 
   document.getElementById('kpi-1-value').textContent = fmtBi(rcl12);
   document.getElementById('kpi-1-sub').textContent = 'Rec. Correntes: ' + fmtBi(recCorr) + ' | Deduções: ' + fmtBi(ded);
 
-  document.getElementById('kpi-2-value').textContent = fmtBi(prev);
-  document.getElementById('kpi-2-sub').textContent = 'Exercício ' + D.ano;
+  document.getElementById('kpi-2-value').textContent = fmtBi(rclEndiv);
+  document.getElementById('kpi-2-sub').textContent = '(IV) − Emendas individuais (V): ' + fmtBi(emendasInd);
 
   document.getElementById('kpi-3-value').textContent = fmtBi(fcdf12);
   document.getElementById('kpi-3-sub').textContent   = 'Total FCDF: ' + fmtBi(sumLinha('fcdf_total', cols)) + ' | Pessoal: ' + fmtBi(sumLinha('fcdf_pessoal', cols));
 
-  document.getElementById('kpi-4-value').textContent = pct.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
-  document.getElementById('kpi-4-sub').textContent   = 'RCL ' + lbl12 + ' / Previsão Atualiz.';
+  document.getElementById('kpi-4-value').textContent = fmtBi(rclPessoal);
+  document.getElementById('kpi-4-sub').textContent   = '(VI) − Emendas bancada, agentes com. e outras (VII−IX)';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -401,26 +396,6 @@ function renderCharts(cols){
       {name:'Deduções (II)',type:'line',data:dedSeries,lineStyle:{width:2,color:'#dc2626',type:'dotted'},itemStyle:{color:'#dc2626'},symbol:'none'},
     ],
     animationDuration:1000,
-  },true);
-
-  // — GAUGE —
-  const rcl12 = sumLinha('rcl', cols);
-  const prev  = D.previsao.rcl;
-  const pct   = prev > 0 ? +((rcl12/prev)*100).toFixed(1) : 0;
-
-  cGauge.setOption({
-    series:[{
-      type:'gauge',startAngle:220,endAngle:-40,min:0,max:120,splitNumber:6,radius:'90%',
-      axisLine:{lineStyle:{width:18,color:[[0.25,'#ef4444'],[0.5,'#f59e0b'],[0.67,'#66bb6a'],[0.83,'#2e7d32'],[1,'#1b5e20']]}},
-      pointer:{itemStyle:{color:'auto'},width:5,length:'60%'},
-      axisTick:{distance:-18,length:6,lineStyle:{color:'#fff',width:1.5}},
-      splitLine:{distance:-18,length:18,lineStyle:{color:'#fff',width:2}},
-      axisLabel:{color:'#64748b',distance:28,fontSize:11,formatter:v=>v+'%'},
-      detail:{valueAnimation:true,formatter:v=>v.toFixed(1)+'%',color:'inherit',fontSize:28,fontWeight:800,fontFamily:'Inter',offsetCenter:[0,'72%']},
-      title:{show:false},
-      data:[{value:pct}],
-      animationDuration:1200,animationEasingUpdate:'cubicOut',
-    }]
   },true);
 
   // — STACKED BAR: Monthly composition —
@@ -479,7 +454,6 @@ function renderTable(cols){
   let h = '<tr><th style="text-align:left;min-width:180px;padding-left:10px;">ESPECIFICAÇÃO</th>';
   labels.forEach(l => { h += '<th>' + l.toUpperCase() + '</th>'; });
   h += '<th style="background:#e9d5ff;">' + lbl12 + '</th>';
-  h += '<th style="background:#e9d5ff;">PREVISÃO<br>ATUALIZ.</th>';
   h += '</tr>';
   document.getElementById('tbl-head').innerHTML = h;
 
@@ -496,7 +470,7 @@ function renderTable(cols){
     {key:'iss',                nome:'ISS',                                   nivel:3},
     {key:'outros_impostos',    nome:'Outros Impostos',                       nivel:3},
     {key:'taxas',              nome:'Taxas',                                 nivel:3},
-    {key:'itr',                nome:'ITR',                                   nivel:3, noPrevisao:true},
+    {key:'itr',                nome:'ITR',                                   nivel:3},
     {key:'contribuicoes',      nome:'Receita de Contribuições',              nivel:2},
     {key:'patrimonial',        nome:'Receita Patrimonial',                   nivel:1},
     {key:'rend_aplic',         nome:'Rendimentos de Aplicação Financeira',   nivel:3},
@@ -536,11 +510,10 @@ function renderTable(cols){
   const frags = [];
   for(const r of rows){
     if(r.sep){
-      frags.push('<tr><td colspan="'+(cols.length+3)+'" style="height:4px;background:#f1f5f9;padding:0;border:none;"></td></tr>');
+      frags.push('<tr><td colspan="'+(cols.length+2)+'" style="height:4px;background:#f1f5f9;padding:0;border:none;"></td></tr>');
       continue;
     }
     const data = D.linhas[r.key];
-    const prev = D.previsao[r.key];
     if(!data) continue;
 
     const lvl = r.nivel;
@@ -552,8 +525,6 @@ function renderTable(cols){
     tr += '<td class="name r'+lvl+'">'+escHtml(nome)+'</td>';
     cols.forEach(c => { tr += '<td class="num">'+fmtNum(data[c]||0)+'</td>'; });
     tr += '<td class="num" style="background:#faf5ff;font-weight:700;">'+fmtNum(rowTotal)+'</td>';
-    tr += '<td class="num" style="background:#faf5ff;">'+
-      (r.noPrevisao ? '<span style="color:#cbd5e1">–</span>' : fmtNum(prev||0))+'</td>';
     tr += '</tr>';
     frags.push(tr);
   }

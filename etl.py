@@ -241,21 +241,20 @@ def load_fcdf_data(base_dir):
         path = base_dir / "data" / "UFIS-FCDFDespesadePessoal.xlsx"
     if not path.exists():
         log.warning(f"Planilha FCDF nao encontrada: {path}")
-        return {"realizados": {}, "previsao": {}}
+        return {"realizados": {}}
     try:
         from openpyxl import load_workbook
     except ImportError:
         log.error("openpyxl nao instalado. Execute: pip install openpyxl")
-        return {"realizados": {}, "previsao": {}}
+        return {"realizados": {}}
     from collections import defaultdict
     try:
         wb = load_workbook(path, read_only=True)
     except Exception as e:
         log.warning(f"Planilha FCDF nao pode ser lida ({path}): {e}")
-        return {"realizados": {}, "previsao": {}}
+        return {"realizados": {}}
     ws = wb.active
     realizados = defaultdict(lambda: {"total": 0.0, "pessoal": 0.0})
-    previsao   = defaultdict(lambda: {"total": 0.0, "pessoal": 0.0})
     for row in ws.iter_rows(min_row=2, values_only=True):
         if row[2] is None:
             continue
@@ -279,14 +278,9 @@ def load_fcdf_data(base_dir):
             realizados[(mes, ano)]["total"]   += saldo
             if is_pessoal:
                 realizados[(mes, ano)]["pessoal"] += saldo
-        elif sc.startswith("5"):
-            saldo = vadeb - vacred
-            previsao[ano]["total"]   += saldo
-            if is_pessoal:
-                previsao[ano]["pessoal"] += saldo
     wb.close()
-    log.info(f"  FCDF: {len(realizados)} meses realizados, {len(previsao)} anos previsao")
-    return {"realizados": dict(realizados), "previsao": dict(previsao)}
+    log.info(f"  FCDF: {len(realizados)} meses realizados")
+    return {"realizados": dict(realizados)}
 
 
 def build_rcl_data(rows):
@@ -294,10 +288,6 @@ def build_rcl_data(rows):
     MESES_PT = ["jan","fev","mar","abr","mai","jun",
                 "jul","ago","set","out","nov","dez"]
     ano_atual = datetime.now().year
-    PREV_EXCL = {521120101, 521220101, 521220201}
-    prev_receita  = defaultdict(float)
-    prev_deducoes = defaultdict(float)
-    prev_emendas  = defaultdict(float)
     real_receita  = defaultdict(lambda: defaultdict(float))
     real_deducoes = defaultdict(lambda: defaultdict(float))
     real_emendas  = defaultdict(lambda: defaultdict(float))
@@ -307,8 +297,6 @@ def build_rcl_data(rows):
         saldo = float(r.get("saldo") or 0)
         if not saldo:
             continue
-        cc_raw = r.get("cocontacontabil")
-        cc = int(str(cc_raw).strip()) if cc_raw is not None else 0
         class_orc_raw = r.get("class_orc") or ""
         try:
             c_int = int(str(class_orc_raw).strip())
@@ -328,36 +316,16 @@ def build_rcl_data(rows):
         except (ValueError, TypeError):
             cofonte = cofederal = 0
 
-        is_prev = (521100000 <= cc <= 521299999)
-        is_real = (621200000 <= cc <= 621399999 and cc != 621310100)
-
-        if is_prev:
-            is_excl = (cc in PREV_EXCL)
-            if not is_excl:
-                key = _rcl_class_orc(c_int, cofonte, cofederal)
-                if key and ano == ano_atual:
-                    prev_receita[key] += saldo
-                ded = _rcl_deducao(c_int)
-                # ded_fundeb na previsao vem APENAS das contas excluidas (PREV_EXCL)
-                if ded and ded != "ded_fundeb" and ano == ano_atual:
-                    prev_deducoes[ded] += saldo
-                em = _rcl_emenda(cofonte, cofederal)
-                if em and ano == ano_atual:
-                    prev_emendas[em] += saldo
-            else:
-                if 17515000 <= c_int <= 17515099 and ano == ano_atual:
-                    prev_deducoes["ded_fundeb"] += saldo
-        elif is_real:
-            meses_oracle.add((mes, ano))
-            key = _rcl_class_orc(c_int, cofonte, cofederal)
-            if key:
-                real_receita[(mes, ano)][key] += saldo
-            ded = _rcl_deducao(c_int)
-            if ded:
-                real_deducoes[(mes, ano)][ded] += saldo
-            em = _rcl_emenda(cofonte, cofederal)
-            if em:
-                real_emendas[(mes, ano)][em] += saldo
+        meses_oracle.add((mes, ano))
+        key = _rcl_class_orc(c_int, cofonte, cofederal)
+        if key:
+            real_receita[(mes, ano)][key] += saldo
+        ded = _rcl_deducao(c_int)
+        if ded:
+            real_deducoes[(mes, ano)][ded] += saldo
+        em = _rcl_emenda(cofonte, cofederal)
+        if em:
+            real_emendas[(mes, ano)][em] += saldo
 
     if not meses_oracle:
         log.warning("RCL: nenhum dado realizado encontrado no SQL.")
@@ -365,6 +333,8 @@ def build_rcl_data(rows):
 
     # ref_mes/ref_ano: ultimo mes fechado conforme {SCHEMA_ANO}.mesfechado.
     # max_mes_fechado vem como coluna escalar no SQL (mesmo valor em todas as linhas).
+    # Garante que os 2 meses de um bimestre estejam fechados antes de habilita-lo
+    # no seletor (evita expor um mes "em branco" sem dado real).
     # Fallback: se NULL (mesfechado vazio no ano corrente), usa max dos realizados Oracle.
     mmf_raw = next((r.get("max_mes_fechado") for r in rows if r.get("max_mes_fechado") is not None), None)
     if mmf_raw is not None and 1 <= int(mmf_raw) <= 12:
@@ -372,9 +342,8 @@ def build_rcl_data(rows):
         ref_ano = ano_atual
         log.info(f"  RCL: ultimo mes fechado (mesfechado) = {ref_mes:02d}/{ref_ano}")
     else:
-        # Fallback: max dos realizados Oracle
-        max_mes, max_ano = max(meses_oracle)
-        ref_mes, ref_ano = max_mes, max_ano
+        # Fallback: max dos realizados Oracle (ordenado por ano, depois mes)
+        ref_mes, ref_ano = max(meses_oracle, key=lambda t: (t[1], t[0]))
         log.warning(f"  RCL: mesfechado vazio/invalido, fallback Oracle max = {ref_mes:02d}/{ref_ano}")
 
     ultimos12 = []
@@ -442,7 +411,6 @@ def build_rcl_data(rows):
 
     fcdf      = load_fcdf_data(BASE_DIR)
     real_fcdf = fcdf.get("realizados", {})
-    prev_fcdf = fcdf.get("previsao", {})
 
     def monta_fcdf(campo):
         linha = {}
@@ -495,41 +463,6 @@ def build_rcl_data(rows):
         - linhas["agentes_com"]["_total"]
         - linhas["outras_ded"]["_total"])
 
-    def pv(key): return prev_receita.get(key, 0.0)
-    def pv_g(keys): return sum(prev_receita.get(k, 0.0) for k in keys)
-
-    previsao = {}
-    for k in KEYS_ATOMICAS:
-        previsao[k] = pv(k)
-    previsao["itr"]                = 0.0
-    previsao["impostos"]           = pv_g(IMPOSTOS_KEYS)
-    previsao["patrimonial"]        = pv_g(PATRIM_KEYS)
-    previsao["transferencias"]     = pv_g(TRANSF_KEYS)
-    previsao["receitas_correntes"] = pv_g(CORR_KEYS)
-
-    for dk in ("contrib_servidor","comp_financeira","rend_prev","ded_fundeb"):
-        previsao[dk] = prev_deducoes.get(dk, 0.0)
-    previsao["deducoes"] = sum(prev_deducoes.values())
-
-    pf = prev_fcdf.get(ano_atual, {})
-    previsao["fcdf_total"]   = pf.get("total", 0.0)
-    previsao["fcdf_pessoal"] = pf.get("pessoal", 0.0)
-    previsao["fcdf"]         = previsao["fcdf_total"] - previsao["fcdf_pessoal"]
-
-    previsao["rcl"] = (previsao["receitas_correntes"]
-                       - previsao["deducoes"]
-                       + previsao["fcdf"])
-
-    for em in ("emendas_ind","emendas_bancada","agentes_com"):
-        previsao[em] = prev_emendas.get(em, 0.0)
-    previsao["outras_ded"] = 0.0
-
-    previsao["rcl_endiv"]   = previsao["rcl"] - previsao["emendas_ind"]
-    previsao["rcl_pessoal"] = (previsao["rcl_endiv"]
-                               - previsao["emendas_bancada"]
-                               - previsao["agentes_com"]
-                               - previsao["outras_ded"])
-
     return {
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
         "ano": ano_atual,
@@ -539,7 +472,6 @@ def build_rcl_data(rows):
         "rotulos": rotulos,
         "janela_padrao": janela_padrao,
         "linhas": linhas,
-        "previsao": previsao,
     }
 
 
