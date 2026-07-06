@@ -53,7 +53,7 @@ Oracle (ORAPRD06)  →  etl.py (Python + oracledb)
 |---|---|---|
 | `receita.json.gz` | `RECEITA.sql` | direto |
 | `despesa.json.gz` | `DESPESA.sql` | direto + deduplicação |
-| `rcl.json.gz` | `receita_RCL.sql` | `build_rcl_data()` — agregação complexa por regras ContDF |
+| `rcl.json.gz` | `rcl.sql` | `build_rcl_data()` — agregação complexa por regras ContDF |
 | `restos_a_pagar.json.gz` | `restos_a_pagar.sql` | direto |
 
 ### Estrutura dos gz

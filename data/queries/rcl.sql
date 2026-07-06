@@ -1,4 +1,4 @@
--- receita_RCL.sql — Receita Corrente Líquida (RREO Anexo 3)
+-- rcl.sql — Receita Corrente Líquida (RREO Anexo 3)
 -- Placeholder {SCHEMA_ANO} substituído pelo Python (ex: mil2026)
 -- Schema mil2001 é fixo (saldocontabil_ex — view histórica)
 -- Não colocar ponto-e-vírgula no final

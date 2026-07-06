@@ -1,7 +1,7 @@
 REGRA DA COLUNAS - linhas RECEITAS CORRENTES (I) e DEDUÇÕES (II) 
 ===============================================================
 
-Fonte: Query receita_RCL.sql
+Fonte: Query rcl.sql
 MÊS/ANO: (COCONTACONTABIL BETWEEN 621200000 AND 621399999) AND (COCONTACONTABIL <> 621310100), SUM(VACREDITO-VADEBITO)
 
 REGRA DA COLUNAS - linha Recursos do Fundo Constitucional do DF Não Destinados ao Pagam. de Pessoal (no SIAFI) (III)

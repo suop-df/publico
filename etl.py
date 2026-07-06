@@ -55,7 +55,7 @@ QUERIES = [
     },
     {
         "file": "rcl.json",
-        "sql_file": "receita_RCL.sql",
+        "sql_file": "rcl.sql",
         "transform": "rcl",
     },
     {

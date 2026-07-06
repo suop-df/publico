@@ -77,7 +77,7 @@ fetchJsonGz('../data/gz/receita.json.gz')
 │   └── queries/                        # SQLs das extrações
 │       ├── DESPESA.sql
 │       ├── RECEITA.sql
-│       ├── receita_RCL.sql             # SQL da RCL (retorna linhas brutas por conta)
+│       ├── rcl.sql                     # SQL da RCL (retorna linhas brutas por conta)
 │       └── saldocontabil_funcao_subfuncao.sql
 ├── balanco_orcamentario/
 │   ├── index.html                      # Menu: Receita e Despesa
