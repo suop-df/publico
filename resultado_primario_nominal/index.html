@@ -480,7 +480,7 @@ var ROWS_REC=[
   {n:'Outras Receitas Financeiras',l:'III',cls:'n2',ind:'ind2',rk:'III',pk:'III',ded:1},
   {n:'Receitas Correntes Restantes',cls:'n2',ind:'ind2',rk:'correntes_restantes',pk:'correntes_restantes'},
   {sep:1},
-  {n:'Receitas Primárias Correntes (Exceto Fontes RPPS)',l:'IV',cls:'n0',gk:'IV',pk:'IV'},
+  {n:'Receitas Primárias Correntes (Exceto Fontes RPPS)',l:'IV',cls:'n0',gk:'IV',pk:'IV',formula:'(I - II - III)'},
   {n:'Receitas Primárias Correntes (Com Fontes RPPS)',l:'V',cls:'n0',rk:'V',pk:'V'},
   {n:'Receitas Não Primárias Correntes (Com Fontes RPPS)',l:'VI',cls:'n0',ded:1},
   {sep:1},
@@ -498,12 +498,12 @@ var ROWS_REC=[
   {n:'Outras Receitas de Capital Não Primárias',l:'XII',cls:'n2',ind:'ind2',rk:'XII',pk:'XII',ded:1},
   {n:'Outras Receitas de Capital Primárias',cls:'n2',ind:'ind2',rk:'outras_cap_prim',pk:'outras_cap_prim'},
   {sep:1},
-  {n:'Receitas Primárias de Capital (Exceto Fontes RPPS)',l:'XIII',cls:'n0',gk:'XIII',pk:'XIII'},
+  {n:'Receitas Primárias de Capital (Exceto Fontes RPPS)',l:'XIII',cls:'n0',gk:'XIII',pk:'XIII',formula:'[VII - (VIII + IX + X + XI + XII)]'},
   {n:'Receitas Primárias de Capital (Com Fontes RPPS)',l:'XIV',cls:'n0',rk:'XIV',pk:'XIV'},
   {n:'Receitas Não Primárias de Capital (Com Fontes RPPS)',l:'XV',cls:'n0',ded:1},
   {sep:1},
-  {n:'Receita Primária Total',l:'XVI',cls:'n0',gk:'XVI',pk:'XVI'},
-  {n:'Receita Primária Total (Exceto Fontes RPPS)',l:'XVII',cls:'n0',gk:'XVII',pk:'XVII'},
+  {n:'Receita Primária Total',l:'XVI',cls:'n0',gk:'XVI',pk:'XVI',formula:'(IV + V + XIII + XIV)'},
+  {n:'Receita Primária Total (Exceto Fontes RPPS)',l:'XVII',cls:'n0',gk:'XVII',pk:'XVII',formula:'(IV + XIII)'},
 ];
 
 function renderReceitas(snap){
@@ -511,7 +511,7 @@ function renderReceitas(snap){
   var frags=[];
   ROWS_REC.forEach(function(r){
     if(r.sep){frags.push('<tr class="sep"><td colspan="3"></td></tr>');return;}
-    var nome=r.n+(r.l?' ('+r.l+')':'');
+    var nome=r.n+(r.l?' ('+r.l+')':'')+(r.formula?' = '+r.formula:'');
     var ind=r.ind?' '+r.ind:'';
     var dc=r.ded?' ded':'';
     var pv,rv;
@@ -556,7 +556,7 @@ var ROWS_DEP=[
   {n:'Juros e Encargos da Dívida',  l:'XIX',   cls:'n1',ind:'ind1',dk:'XIX',ded:1},
   {n:'Outras Despesas Correntes',              cls:'n1',ind:'ind1',dk:'outras_corr'},
   {sep:1},
-  {n:'Despesas Primárias Correntes (Exceto Fontes RPPS)',l:'XX', cls:'n0',dk:'XX'},
+  {n:'Despesas Primárias Correntes (Exceto Fontes RPPS)',l:'XX', cls:'n0',dk:'XX',formula:'(XVIII - XIX)'},
   {n:'Despesas Primárias Correntes (Com Fontes RPPS)',   l:'XXI',cls:'n0',dk:'XXI'},
   {n:'Despesas Não Primárias Correntes (Com Fontes RPPS)',l:'XXII',cls:'n0',ded:1},
   {sep:1},
@@ -569,20 +569,20 @@ var ROWS_DEP=[
   {n:'Demais Inversões Financeiras',            cls:'n2',ind:'ind2',dk:'demais_inv'},
   {n:'Amortização da Dívida',          l:'XXVII',cls:'n1',ind:'ind1',dk:'XXVII',ded:1},
   {sep:1},
-  {n:'Despesas Primárias de Capital (Exceto Fontes RPPS)',l:'XXVIII',cls:'n0',dk:'XXVIII'},
+  {n:'Despesas Primárias de Capital (Exceto Fontes RPPS)',l:'XXVIII',cls:'n0',dk:'XXVIII',formula:'[XXIII - (XXIV + XXV + XXVI + XXVII)]'},
   {n:'Reserva de Contingência',                l:'XXIX', cls:'n0',dk:'XXIX'},
   {n:'Despesas Primárias de Capital (Com Fontes RPPS)',  l:'XXX',  cls:'n0',dk:'XXX'},
   {n:'Despesas Não Primárias de Capital (Com Fontes RPPS)',l:'XXXI',cls:'n0',ded:1},
   {sep:1},
-  {n:'Despesa Primária Total',                  l:'XXXII', cls:'n0',dk:'XXXII'},
-  {n:'Despesa Primária Total (Exceto Fontes RPPS)',l:'XXXIII',cls:'n0',dk:'XXXIII'},
+  {n:'Despesa Primária Total',                  l:'XXXII', cls:'n0',dk:'XXXII',formula:'(XX + XXI + XXVIII + XXIX + XXX)'},
+  {n:'Despesa Primária Total (Exceto Fontes RPPS)',l:'XXXIII',cls:'n0',dk:'XXXIII',formula:'(XX + XXVIII + XXIX)'},
 ];
 
 function renderDespesas(snap){
   var frags=[];
   ROWS_DEP.forEach(function(r){
     if(r.sep){frags.push('<tr class="sep"><td colspan="8"></td></tr>');return;}
-    var nome=r.n+(r.l?' ('+r.l+')':'');
+    var nome=r.n+(r.l?' ('+r.l+')':'')+(r.formula?' = '+r.formula:'');
     var ind=r.ind?' '+r.ind:'';
     var dc=r.ded?' ded':'';
     var cols;
@@ -605,13 +605,14 @@ function renderDespesas(snap){
 
 // ─── TABELA RESULTADO PRIMÁRIO ──────────────────────────────────────────────
 function renderResultado(snap){
-  function resRow(n,l,v){
+  function resRow(n,l,v,formula){
     var cls='res '+(v>0?'surplus':v<0?'deficit':'');
-    return '<tr class="'+cls+'"><td class="name">'+escHtml(n+' ('+l+')')+'</td><td class="num">'+fmtNum(v)+'</td></tr>';
+    var nome=n+' ('+l+')'+(formula?' = '+formula:'');
+    return '<tr class="'+cls+'"><td class="name">'+escHtml(nome)+'</td><td class="num">'+fmtNum(v)+'</td></tr>';
   }
   document.getElementById('tbl-resultado').innerHTML=[
-    resRow('Resultado Primário (Com RPPS) — Acima da Linha','XXXIV',snap.res.XXXIV||0),
-    resRow('Resultado Primário (Sem RPPS) — Acima da Linha','XXXV', snap.res.XXXV||0),
+    resRow('Resultado Primário (Com RPPS) — Acima da Linha','XXXIV',snap.res.XXXIV||0,'[XVIa - (XXXIIa + XXXIIb + XXXIIc)]'),
+    resRow('Resultado Primário (Sem RPPS) — Acima da Linha','XXXV', snap.res.XXXV||0,'[XVIIa - (XXXIIIa + XXXIIIb + XXXIIIc)]'),
   ].join('');
 }
 
@@ -629,16 +630,17 @@ function renderJuros(snap){
   function jurRow(n,l,v,ded){
     return '<tr class="juro'+(ded?' ded':'')+'"><td class="name ind1">'+escHtml(n+' ('+l+')')+'</td><td class="num">'+fmtNum(v)+'</td></tr>';
   }
-  function resRow(n,l,v){
+  function resRow(n,l,v,formula){
     var cls='res '+(v>0?'surplus':v<0?'deficit':'');
-    return '<tr class="'+cls+'"><td class="name">'+escHtml(n+' ('+l+')')+'</td><td class="num">'+fmtNum(v)+'</td></tr>';
+    var nome=n+' ('+l+')'+(formula?' = '+formula:'');
+    return '<tr class="'+cls+'"><td class="name">'+escHtml(nome)+'</td><td class="num">'+fmtNum(v)+'</td></tr>';
   }
   var sep='<tr class="sep"><td colspan="2"></td></tr>';
   document.getElementById('tbl-juros').innerHTML=[
     jurRow('Juros, Encargos e Variações Monetárias Ativos (Exceto RPPS)',  'XXXVI',  snap.j.XXXVI||0,  false),
     jurRow('Juros, Encargos e Variações Monetárias Passivos (Exceto RPPS)','XXXVII', snap.j.XXXVII||0, true),
     sep,
-    resRow('Resultado Nominal (Sem RPPS) — Acima da Linha','XXXVIII',snap.res.XXXVIII||0),
+    resRow('Resultado Nominal (Sem RPPS) — Acima da Linha','XXXVIII',snap.res.XXXVIII||0,'XXXV + (XXXVI - XXXVII)'),
   ].join('');
 }
 
