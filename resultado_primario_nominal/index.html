@@ -93,7 +93,6 @@ table.dem th.left{text-align:left;padding-left:10px}
 table.dem td{padding:4px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap}
 table.dem td.name{text-align:left;white-space:normal;min-width:280px;max-width:460px;padding-left:10px}
 table.dem td.num{text-align:right;font-variant-numeric:tabular-nums}
-table.dem td.total{text-align:right;font-variant-numeric:tabular-nums;background:#faf5ff;font-weight:700}
 /* Previsão: mesma cor da coluna de valores (sem destaque azul) */
 table.dem td.prev{text-align:right;font-variant-numeric:tabular-nums}
 tr.n0 td{background:var(--accent-100);font-weight:700;font-size:.74rem;color:var(--accent-900)}
@@ -217,10 +216,13 @@ tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transpa
         <thead>
           <tr>
             <th class="left" style="min-width:320px">Especifica&#231;&#227;o</th>
+            <th style="min-width:130px">Dota&#231;&#227;o Atualizada</th>
+            <th style="min-width:130px">Despesas Empenhadas</th>
+            <th style="min-width:130px">Despesas Liquidadas</th>
             <th style="min-width:120px">Pagas no Exerc&#237;cio (a)</th>
             <th style="min-width:120px">RP Proc. Pagos (b)</th>
+            <th style="min-width:140px">RP N&#227;o-Proc. Liquidados</th>
             <th style="min-width:120px">RP N&#227;o-Proc. Pagos (c)</th>
-            <th style="min-width:120px;background:#e9d5ff;">Total (a+b+c)</th>
           </tr>
         </thead>
         <tbody id="tbl-despesas"></tbody>
@@ -335,13 +337,13 @@ function computeSnap(meses){
            'pessoal','outras_correntes_dep','investimentos','demais_inv'];
 
   var r={}; REC.forEach(function(k){r[k]=0;});
-  var d={}; DEP.forEach(function(k){d[k]=[0,0,0];});
+  var d={}; DEP.forEach(function(k){d[k]=[0,0,0,0,0,0,0];});
   var j={XXXVI:0,XXXVII:0};
 
   meses.forEach(function(m){
     var pm=D.por_mes[m]; if(!pm) return;
     REC.forEach(function(k){r[k]+=(pm.rec[k]||0);});
-    DEP.forEach(function(k){for(var i=0;i<3;i++) d[k][i]+=(pm.dep[k]?pm.dep[k][i]||0:0);});
+    DEP.forEach(function(k){for(var i=0;i<7;i++) d[k][i]+=(pm.dep[k]?pm.dep[k][i]||0:0);});
     j.XXXVI+=(pm.jur.XXXVI||0); j.XXXVII+=(pm.jur.XXXVII||0);
   });
 
@@ -359,25 +361,27 @@ function computeSnap(meses){
   var gr_transf_cap = r.convenios + r.outras_transf_cap;
   var gr_outras_cap = r.XII + r.outras_cap_prim;
 
-  // Grupos calculados — despesas
-  function sub3(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
-  function add3(arrs){
-    return [
-      arrs.reduce(function(s,a){return s+a[0];},0),
-      arrs.reduce(function(s,a){return s+a[1];},0),
-      arrs.reduce(function(s,a){return s+a[2];},0)
-    ];
+  // Grupos calculados — despesas (arrays de 7 posições:
+  // 0=a 1=b 2=c 3=empenhadas 4=liquidadas 5=rp_naoproc_liq 6=dotacao)
+  function subArr(a,b){return a.map(function(v,i){return v-b[i];});}
+  function addArr(arrs){
+    var out=[0,0,0,0,0,0,0];
+    arrs.forEach(function(a){for(var i=0;i<7;i++) out[i]+=a[i];});
+    return out;
   }
   function sum3(a){return a[0]+a[1]+a[2];}
-  function fmt3(a){return {a:a[0],b:a[1],c:a[2],total:sum3(a)};}
+  function fmt7(a){
+    return {a:a[0],b:a[1],c:a[2],empenhadas:a[3],liquidadas:a[4],rp_naoproc_liq:a[5],
+            dotacao:a[6],total:sum3(a)};
+  }
 
-  var XX     = sub3(d.XVIII, d.XIX);
-  var XXVIII = sub3(d.XXIII, add3([d.XXIV,d.XXV,d.XXVI,d.XXVII]));
-  var XXXII  = add3([XX,d.XXI,XXVIII,d.XXIX,d.XXX]);
-  var XXXIII = add3([XX,XXVIII,d.XXIX]);
+  var XX     = subArr(d.XVIII, d.XIX);
+  var XXVIII = subArr(d.XXIII, addArr([d.XXIV,d.XXV,d.XXVI,d.XXVII]));
+  var XXXII  = addArr([XX,d.XXI,XXVIII,d.XXIX,d.XXX]);
+  var XXXIII = addArr([XX,XXVIII,d.XXIX]);
 
   // Grupos de nível 1 (despesas)
-  var gr_inv_fin = add3([d.XXIV,d.XXV,d.XXVI,d.demais_inv]);
+  var gr_inv_fin = addArr([d.XXIV,d.XXV,d.XXVI,d.demais_inv]);
 
   var XXXIV   = XVI  - sum3(XXXII);
   var XXXV    = XVII - sum3(XXXIII);
@@ -393,14 +397,14 @@ function computeSnap(meses){
       IV:IV, XIII:XIII, XVI:XVI, XVII:XVII
     },
     dep:{
-      XVIII:fmt3(d.XVIII), XIX:fmt3(d.XIX), XX:fmt3(XX),
-      XXI:fmt3(d.XXI), XXIII:fmt3(d.XXIII), XXIV:fmt3(d.XXIV),
-      XXV:fmt3(d.XXV), XXVI:fmt3(d.XXVI), XXVII:fmt3(d.XXVII),
-      XXVIII:fmt3(XXVIII), XXIX:fmt3(d.XXIX), XXX:fmt3(d.XXX),
-      XXXII:fmt3(XXXII), XXXIII:fmt3(XXXIII),
-      pessoal:fmt3(d.pessoal), outras_corr:fmt3(d.outras_correntes_dep),
-      invest:fmt3(d.investimentos), demais_inv:fmt3(d.demais_inv),
-      inv_fin:fmt3(gr_inv_fin)
+      XVIII:fmt7(d.XVIII), XIX:fmt7(d.XIX), XX:fmt7(XX),
+      XXI:fmt7(d.XXI), XXIII:fmt7(d.XXIII), XXIV:fmt7(d.XXIV),
+      XXV:fmt7(d.XXV), XXVI:fmt7(d.XXVI), XXVII:fmt7(d.XXVII),
+      XXVIII:fmt7(XXVIII), XXIX:fmt7(d.XXIX), XXX:fmt7(d.XXX),
+      XXXII:fmt7(XXXII), XXXIII:fmt7(XXXIII),
+      pessoal:fmt7(d.pessoal), outras_corr:fmt7(d.outras_correntes_dep),
+      invest:fmt7(d.investimentos), demais_inv:fmt7(d.demais_inv),
+      inv_fin:fmt7(gr_inv_fin)
     },
     res:{XXXIV:XXXIV,XXXV:XXXV,XXXVIII:XXXVIII}
   };
@@ -577,16 +581,22 @@ var ROWS_DEP=[
 function renderDespesas(snap){
   var frags=[];
   ROWS_DEP.forEach(function(r){
-    if(r.sep){frags.push('<tr class="sep"><td colspan="5"></td></tr>');return;}
+    if(r.sep){frags.push('<tr class="sep"><td colspan="8"></td></tr>');return;}
     var nome=r.n+(r.l?' ('+r.l+')':'');
     var ind=r.ind?' '+r.ind:'';
     var dc=r.ded?' ded':'';
     var cols;
     if(r.dk!=null){
-      var dv=snap.dep[r.dk]||{a:0,b:0,c:0,total:0};
-      cols='<td class="num">'+fmtNum(dv.a)+'</td><td class="num">'+fmtNum(dv.b)+'</td><td class="num">'+fmtNum(dv.c)+'</td><td class="total">'+fmtNum(dv.total)+'</td>';
+      var dv=snap.dep[r.dk]||{a:0,b:0,c:0,empenhadas:0,liquidadas:0,rp_naoproc_liq:0,dotacao:0};
+      cols='<td class="num">'+fmtNum(dv.dotacao)+'</td>'
+         +'<td class="num">'+fmtNum(dv.empenhadas)+'</td>'
+         +'<td class="num">'+fmtNum(dv.liquidadas)+'</td>'
+         +'<td class="num">'+fmtNum(dv.a)+'</td>'
+         +'<td class="num">'+fmtNum(dv.b)+'</td>'
+         +'<td class="num">'+fmtNum(dv.rp_naoproc_liq)+'</td>'
+         +'<td class="num">'+fmtNum(dv.c)+'</td>';
     } else {
-      cols='<td class="num">'+dash()+'</td><td class="num">'+dash()+'</td><td class="num">'+dash()+'</td><td class="total">'+dash()+'</td>';
+      cols=new Array(7).fill('<td class="num">'+dash()+'</td>').join('');
     }
     frags.push('<tr class="'+r.cls+dc+'"><td class="name'+ind+'">'+escHtml(nome)+'</td>'+cols+'</tr>');
   });

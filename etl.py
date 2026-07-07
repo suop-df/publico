@@ -832,10 +832,41 @@ def build_resultado_primario_nominal_data(rows):
     Computa o RREO Anexo 06 (Acima da Linha) com todos os sub-níveis,
     por mês individual. O browser soma os meses selecionados.
     Regras: tools/regra_ressultado_primario_nominal.txt
+
+    Colunas de despesa por bucket (índices do array de 7 posições):
+      0=Pagas(a) 1=RP Proc. Pagos(b) 2=RP Não-Proc. Pagos(c)
+      3=Empenhadas 4=Liquidadas 5=RP Não-Proc. Liquidados 6=Dotação Atualizada
+    Dotação Atualizada é fluxo mensal como as demais (validado via SQL: bate
+    com o oficial só quando filtrado pelos mesmos inmes do bimestre) — por
+    isso soma junto no mesmo array mensal, respeitando os meses selecionados.
     """
-    def _fmt3(arr):
-        return {"a": round(arr[0], 2), "b": round(arr[1], 2), "c": round(arr[2], 2),
-                "total": round(arr[0] + arr[1] + arr[2], 2)}
+    def _classifica_dep_bucket(func, is_exceto_rpps, na2, na_mod, add):
+        """add(key) deposita as contribuições da linha no bucket 'key'
+        (DEP_KEYS) — quem soma os valores é o callback `add`."""
+        if func == "99":
+            add("XXIX")
+        elif is_exceto_rpps:
+            if na2 in {"31", "32", "33"}:
+                add("XVIII")
+                if   na2 == "31": add("pessoal")
+                elif na2 == "32": add("XIX")
+                elif na2 == "33": add("outras_correntes_dep")
+            elif na2 in {"44", "45", "46"}:
+                add("XXIII")
+                if na2 == "44":
+                    add("investimentos")
+                elif na2 == "45":
+                    if   na_mod == "66": add("XXIV")
+                    elif na_mod == "64": add("XXV")
+                    elif na_mod == "63": add("XXVI")
+                    else:                add("demais_inv")
+                elif na2 == "46":
+                    add("XXVII")
+        else:
+            if na2 in {"31", "33"}:
+                add("XXI")
+            elif na2 in {"44", "45"} and not (na2 == "45" and na_mod in {"63", "64", "66"}):
+                add("XXX")
 
     REC_KEYS = [
         # Principais (já existiam)
@@ -857,7 +888,7 @@ def build_resultado_primario_nominal_data(rows):
     ]
 
     M_rec = {m: {k: 0.0 for k in REC_KEYS} for m in range(1, 13)}
-    M_dep = {m: {k: [0.0, 0.0, 0.0] for k in DEP_KEYS} for m in range(1, 13)}
+    M_dep = {m: {k: [0.0] * 7 for k in DEP_KEYS} for m in range(1, 13)}
     M_jur = {m: {"XXXVI": 0.0, "XXXVII": 0.0} for m in range(1, 13)}
     P_rec = {k: 0.0 for k in REC_KEYS}
 
@@ -972,6 +1003,7 @@ def build_resultado_primario_nominal_data(rows):
         is_rpps        = cf[1:4] in {"800","801","802"} if len(cf) >= 4 else False
         is_exceto_rpps = not is_rpps
         cc4 = cc[:4]
+        cc5 = cc[:5]
         cc7 = cc[:7]
 
         if cc4 in {"6212","6213"}:
@@ -985,43 +1017,41 @@ def build_resultado_primario_nominal_data(rows):
         else:
             if not mes or mes > 12:
                 continue
-            if   cc7 == "6221304":                col, val = 0, vacred - vadeb
-            elif cc4 == "6322":                   col, val = 1, vacred - vadeb
-            elif cc in {"631400000","631820000"}:  col, val = 2, vacred - vadeb
-            elif _is_xxxvi(cc)  and is_exceto_rpps:
-                M_jur[mes]["XXXVI"]  += vacred - vadeb; continue
-            elif _is_xxxvii(cc) and is_exceto_rpps:
-                M_jur[mes]["XXXVII"] += vadeb - vacred; continue
-            else:
+
+            # Cada linha pode contribuir para mais de uma coluna ao mesmo tempo
+            # (ex.: 6221304 é ao mesmo tempo Empenhada + Liquidada + Paga(a);
+            # 631400000 é ao mesmo tempo RP Não-Proc. Liquidado + Pago(c)).
+            contribs = {}
+            if cc5 in {"52211","52212","52215","52219"}:
+                contribs[6] = vadeb - vacred                      # Dotação Atualizada
+            if cc5 == "62213":
+                contribs[3] = vacred - vadeb                      # Despesas Empenhadas
+            if cc7 in {"6221303","6221304","6221307"}:
+                contribs[4] = vacred - vadeb                      # Despesas Liquidadas
+            if cc7 == "6221304":
+                contribs[0] = vacred - vadeb                      # Despesas Pagas (a)
+            if cc4 == "6322":
+                contribs[1] = vacred - vadeb                      # RP Processados Pagos (b)
+            if cc in {"631300000","631400000","631820000","631810000"}:
+                contribs[5] = vacred - vadeb                      # RP Não-Proc. Liquidados
+            if cc in {"631400000","631820000"}:
+                contribs[2] = vacred - vadeb                      # RP Não-Proc. Pagos (c)
+
+            if not contribs:
+                if _is_xxxvi(cc) and is_exceto_rpps:
+                    M_jur[mes]["XXXVI"]  += vacred - vadeb
+                elif _is_xxxvii(cc) and is_exceto_rpps:
+                    M_jur[mes]["XXXVII"] += vadeb - vacred
                 continue
 
             na2    = na[:2]
             na_mod = na[4:6]
 
-            if func == "99":
-                M_dep[mes]["XXIX"][col] += val
-            elif is_exceto_rpps:
-                if na2 in {"31","32","33"}:
-                    M_dep[mes]["XVIII"][col] += val
-                    if   na2 == "31": M_dep[mes]["pessoal"][col]              += val
-                    elif na2 == "32": M_dep[mes]["XIX"][col]                  += val
-                    elif na2 == "33": M_dep[mes]["outras_correntes_dep"][col] += val
-                elif na2 in {"44","45","46"}:
-                    M_dep[mes]["XXIII"][col] += val
-                    if na2 == "44":
-                        M_dep[mes]["investimentos"][col] += val
-                    elif na2 == "45":
-                        if   na_mod == "66": M_dep[mes]["XXIV"][col]     += val
-                        elif na_mod == "64": M_dep[mes]["XXV"][col]      += val
-                        elif na_mod == "63": M_dep[mes]["XXVI"][col]     += val
-                        else:                M_dep[mes]["demais_inv"][col] += val
-                    elif na2 == "46":
-                        M_dep[mes]["XXVII"][col] += val
-            else:
-                if na2 in {"31","33"}:
-                    M_dep[mes]["XXI"][col] += val
-                elif na2 in {"44","45"} and not (na2 == "45" and na_mod in {"63","64","66"}):
-                    M_dep[mes]["XXX"][col] += val
+            def _add(k, _mes=mes, _contribs=contribs):
+                for idx, v in _contribs.items():
+                    M_dep[_mes][k][idx] += v
+
+            _classifica_dep_bucket(func, is_exceto_rpps, na2, na_mod, _add)
 
     max_mes = next((m for m in range(12, 0, -1)
                     if any(M_rec[m][k] != 0.0 for k in REC_KEYS)), 0)
@@ -1043,7 +1073,7 @@ def build_resultado_primario_nominal_data(rows):
     for mes in range(1, max_mes + 1):
         por_mes[str(mes)] = {
             "rec": {k: round(M_rec[mes][k], 2) for k in REC_KEYS},
-            "dep": {k: [round(M_dep[mes][k][i], 2) for i in range(3)] for k in DEP_KEYS},
+            "dep": {k: [round(M_dep[mes][k][i], 2) for i in range(7)] for k in DEP_KEYS},
             "jur": {"XXXVI": round(M_jur[mes]["XXXVI"], 2),
                     "XXXVII": round(M_jur[mes]["XXXVII"], 2)},
         }
