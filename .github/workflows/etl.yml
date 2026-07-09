@@ -54,3 +54,12 @@ jobs:
           } else {
             Write-Host "Sem alteracoes para commitar."
           }
+      - name: Espelhar para a VM interna (Fase A)
+        shell: powershell
+        env:
+          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=accept-new"
+        run: |
+          git remote remove vm 2>$null
+          git remote add vm ssh://administrator@10.233.160.36/E:/git/publico.git
+          git push vm main --force
+          Write-Host "Push para a VM concluido."
