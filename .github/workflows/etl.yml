@@ -49,6 +49,11 @@ jobs:
               # Primeiro commit de dados após mudança de código — cria normalmente
               git commit -m "chore: atualiza dados ETL $date"
               git push origin main
+              if ($LASTEXITCODE -ne 0) {
+                # Remoto avancou entre o checkout e o push (ex.: outra execucao
+                # concorrente) — forca, ja que e so um commit de dados regeneravel
+                git push --force origin main
+              }
             }
             Write-Host "Push concluido."
           } else {
