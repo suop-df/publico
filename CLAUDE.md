@@ -243,6 +243,46 @@ git pull --rebase
 git push
 ```
 
+### `git deploy` — enviar código pro GitHub e pra VM de uma vez
+
+A partir de 2026-07-13, a VM (`10.233.160.36`) roda ETL próprio e independente
+do GitHub Actions (ver `docs/migracao_vm_intranet_setup.md`), recebendo código
+via `git push` para um repositório bare (`E:\git\publico.git`, remote `vm`) com
+hook `post-receive` que popula `E:\sites\publico` (servido pelo IIS).
+
+Antes, só os commits automáticos de dados do ETL eram espelhados pra VM. Código
+sempre foi manual — e fácil de esquecer o segundo push. Por isso foi criado o
+alias `git deploy`, que faz as duas coisas de uma vez:
+
+```powershell
+git deploy
+```
+
+Equivale a:
+```powershell
+git push origin main          # normal — nunca force
+git push --force vm main      # sempre force
+```
+
+**Por que force só na VM, não no GitHub:** a VM é tratada como espelho
+descartável, sem histórico próprio a preservar (decisão consciente desde a
+Fase A) — force nela é seguro e esperado. Force no `origin` (GitHub) nunca é
+automático: já causou perda de histórico uma vez (ver `project_infrastructure`
+na memória do Claude, incidente de 2026-06-13) e só deve ser feito com
+confirmação explícita a cada vez.
+
+**Autenticação:** a perna do GitHub usa HTTPS (Git Credential Manager — é o
+que abre a janela de login do navegador, como sempre). A perna da VM usa SSH
+com chave já instalada e sem senha (`~/.ssh/id_ed25519_vm_publico`) — não pede
+login, roda silenciosa.
+
+**Atenção:** `git deploy` é um alias **local** (`git config alias.deploy`,
+gravado em `.git/config`, não versionado no repositório). Se clonar o repo em
+outra máquina, recriar com:
+```powershell
+git config alias.deploy '!git push origin main && git push --force vm main'
+```
+
 ---
 
 ## Mínimo Educação (MDE) — Manutenção periódica
