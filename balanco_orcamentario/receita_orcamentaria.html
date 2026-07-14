@@ -648,8 +648,16 @@ let PREVISAO  = [];
 
 const ANO_ATUAL   = 2026;
 const ANO_ANTERIOR= 2025;
-const MAX_MES     = 4;
-const MESES_FECHADOS = [1, 2, 3, 4];
+
+// MAX_MES automático: último mês fechado do ANO_ATUAL.
+// Dados são D-1, então o mês corrente sempre está parcial — o último mês
+// fechado é sempre o anterior ao mês corrente (horário de Brasília).
+// Se ANO_ATUAL já não é mais o ano corrente, todo o ano está fechado (12).
+const _hojeBrasilia = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+const MAX_MES = (ANO_ATUAL === _hojeBrasilia.getFullYear())
+    ? Math.max(1, _hojeBrasilia.getMonth())
+    : 12;
+const MESES_FECHADOS = Array.from({ length: MAX_MES }, (_, i) => i + 1);
 
 const NOMES_MES = {
     1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',
