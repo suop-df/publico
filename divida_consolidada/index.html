@@ -318,6 +318,11 @@ function renderTabela(s){
   frags.push(row('DÍVIDA CONSOLIDADA LÍQUIDA-DCL ( III ) = ( I - II )',s.DCL,{cls:'n0 res'}));
   frags.push(sep());
 
+  if(s.RCLajustada==null){
+    var msg='RCL ainda não fechada para '+MESES_NOME[getMesSelecionado()]+'/'+D.ano;
+    if(RCL&&RCL.ref_mes&&RCL.ref_ano) msg+=' — último mês disponível: '+MESES_NOME[RCL.ref_mes]+'/'+RCL.ref_ano;
+    frags.push('<tr class="n1"><td class="name" colspan="2" style="color:#94a3b8;font-style:italic">'+escHtml(msg)+'</td></tr>');
+  }
   frags.push(row('RECEITA CORRENTE LÍQUIDA (RCL) ( IV )',s.RCLiv,{cls:'n1'}));
   frags.push(row('(-) Transfer. Obrigat. da União relat. às emendas individuais (art. 166-A, § 1º, da CF) ( V )',s.emendasV,{cls:'n1 ded'}));
   frags.push(row('RCL Ajustada para Cálculo dos Limites de Endividamento ( VI ) = ( IV - V )',s.RCLajustada,{cls:'n0'}));

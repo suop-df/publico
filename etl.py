@@ -2147,8 +2147,17 @@ def build_divida_consolidada_data(rows):
             M[mes]["depositos_restituiveis"] += saldo
             continue
 
-    max_mes = next((m for m in range(12, 0, -1)
-                    if any(M[m][k] != 0.0 for k in _DC_KEYS)), 1)
+    # max_mes = último mês FECHADO (mesfechado), mesmo padrão de rcl.sql —
+    # garante que o seletor só ofereça meses em que a RCL Ajustada (que
+    # também depende de mesfechado) tem dado disponível. Fallback: maior
+    # mês com algum dado no Oracle, se mesfechado estiver vazio no ano.
+    mmf_raw = next((r.get("max_mes_fechado") for r in rows if r.get("max_mes_fechado") is not None), None)
+    if mmf_raw is not None and 1 <= int(mmf_raw) <= 12:
+        max_mes = int(mmf_raw)
+    else:
+        max_mes = next((m for m in range(12, 0, -1)
+                        if any(M[m][k] != 0.0 for k in _DC_KEYS)), 1)
+        log.warning(f"  Dívida Consolidada: mesfechado vazio/invalido, fallback max_mes={max_mes}")
 
     por_mes = {}
     for mes in range(0, max_mes + 1):

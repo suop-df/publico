@@ -21,6 +21,11 @@
 -- é extraída inteira; os sub-ranges/contas excluídos pela regra são
 -- filtrados em Python (não dá para combinar IN(...) e BETWEEN na mesma
 -- lista, e as exclusões variam por sub-faixa).
+--
+-- max_mes_fechado — mesmo padrão de rcl.sql: max(inmes) de
+-- {SCHEMA_ANO}.mesfechado. Limita o seletor de mês do dashboard aos meses
+-- já fechados, para que a RCL Ajustada (que depende de mesfechado) sempre
+-- tenha dado disponível para qualquer mês selecionável.
 
 SELECT
   s.coexercicio                 AS ano,
@@ -30,7 +35,10 @@ SELECT
   s.coug,
   s.cofonte,
   s.vadebito,
-  s.vacredito
+  s.vacredito,
+  (SELECT MAX(m.inmes)
+     FROM {SCHEMA_ANO}.mesfechado m
+    WHERE m.inmes BETWEEN 1 AND 12) AS max_mes_fechado
 FROM mil2001.saldocontabil_ex s
 WHERE s.inmes BETWEEN 0 AND 12
   AND s.coexercicio = EXTRACT(YEAR FROM SYSDATE)
