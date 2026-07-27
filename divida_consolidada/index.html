@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dívida Consolidada — GDF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1e293b;min-height:100vh}
+:root{
+  --radius:12px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.1);
+  --accent-900:#1b5e20;--accent-700:#006633;
+  --accent-500:#43a047;--accent-200:#c8e6c9;--accent-100:#e8f5e9;--accent-50:#f1f8e9;
+  --gradient:linear-gradient(135deg,#1b5e20 0%,#006633 40%,#2e7d32 100%);
+  --green-600:#16a34a;--green-100:#dcfce7;--green-900:#14532d;
+  --red-600:#dc2626;--red-100:#fee2e2;--red-900:#991b1b;
+}
+
+/* ═══ HEADER ═══ */
+.header{background:var(--gradient);color:#fff;padding:16px 28px;display:flex;align-items:center;gap:20px;box-shadow:var(--shadow-lg)}
+.header img{height:52px;flex-shrink:0}
+.header-titles{flex:1}
+.header-titles h1{font-size:1rem;font-weight:700;letter-spacing:.3px;line-height:1.3}
+.header-titles .subtitle{font-size:.75rem;opacity:.75;font-weight:400;margin-top:2px}
+.data-atualizacao{font-size:.7rem;opacity:.75;margin-top:4px;font-weight:400}
+.btn-voltar{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
+.btn-voltar:hover{background:rgba(255,255,255,.25)}
+
+/* ═══ CONTENT ═══ */
+.content{padding:20px 28px 40px}
+
+/* ═══ TOPO: SELETOR + KPIs LADO A LADO ═══ */
+.topo-row{display:flex;gap:14px;margin-bottom:16px;align-items:stretch}
+.sel-panel{background:#fff;border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);flex-shrink:0;width:190px;display:flex;flex-direction:column;gap:6px}
+.sel-label{font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;display:block}
+.mes-select{font-family:inherit;font-size:.8rem;font-weight:600;padding:6px 8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;width:100%}
+.mes-select:focus{border-color:var(--accent-500);outline:none}
+.sel-hint{font-size:.62rem;color:#94a3b8}
+/* Cards lado a lado */
+.kpi-col{display:flex;flex-direction:row;gap:14px;flex:1}
+.kpi-card{background:#fff;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);border-left:4px solid #cbd5e1;transition:box-shadow .2s,transform .2s;flex:1;min-width:0}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-card.dc{border-left-color:var(--accent-700)}
+.kpi-card.dcl{border-left-color:#0369a1}
+.kpi-card.pct{border-left-color:#7e22ce}
+.kpi-label{font-size:.67rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.kpi-value{font-size:1.2rem;font-weight:800;line-height:1.1;margin-bottom:4px;color:#1e293b}
+.kpi-card.dc .kpi-value{color:var(--accent-700)}
+.kpi-card.dcl .kpi-value{color:#0369a1}
+.kpi-card.pct .kpi-value{color:#7e22ce}
+.kpi-sub{font-size:.67rem;color:#94a3b8;font-weight:500;margin-top:4px}
+
+/* ═══ TABLE ═══ */
+.table-panel{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:20px}
+.table-panel-header{padding:12px 20px;border-bottom:1px solid #f1f5f9}
+.table-panel-header h3{font-size:.82rem;font-weight:700;color:var(--accent-900)}
+.table-wrap{overflow-x:auto}
+table.dem{width:100%;border-collapse:collapse;font-size:.72rem}
+table.dem th{background:var(--accent-50);color:var(--accent-900);text-align:center;padding:7px 6px;border-bottom:2px solid var(--accent-200);font-size:.64rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+table.dem th.left{text-align:left;padding-left:10px}
+table.dem td{padding:5px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap}
+table.dem td.name{text-align:left;white-space:normal;min-width:340px;max-width:520px;padding-left:10px}
+table.dem td.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.n0 td{background:var(--accent-100);font-weight:700;font-size:.74rem;color:var(--accent-900)}
+tr.n1 td{background:var(--accent-50);font-weight:600;font-size:.72rem}
+tr.n2 td{font-weight:500}
+tr.n3 td{font-weight:400;color:#475569}
+tr.ded td{color:var(--red-900)}
+tr.ded.n0 td{background:var(--red-100);color:var(--red-900)}
+tr.res td{font-weight:800;font-size:.76rem}
+tr.res.n0 td{background:var(--green-100);color:var(--green-900)}
+tr.sep td{height:4px;background:#f1f5f9;padding:0;border:none}
+tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transparent)!important}
+.ind1{padding-left:22px!important}.ind2{padding-left:38px!important}.ind3{padding-left:54px!important}
+
+/* ═══ FOOTER ═══ */
+.footer{text-align:center;padding:14px 28px;font-size:.67rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:1000px){.topo-row{flex-direction:column}.kpi-col{flex-direction:row;flex-wrap:wrap}}
+@media(max-width:640px){.kpi-col{flex-direction:column}}
+@media(max-width:768px){.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}}
+@media print{.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}.kpi-card,.table-panel{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOADING ══ -->
+<div id="loading-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:sans-serif;font-size:1rem;color:#555;flex-direction:column;gap:12px">
+  <div style="font-size:2rem">&#9203;</div>
+  <div>Carregando dados&#8230;</div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <img id="brasao" alt="Bras&#227;o do DF">
+  <div class="header-titles">
+    <h1>DISTRITO FEDERAL &middot; D&#205;VIDA CONSOLIDADA</h1>
+    <div class="subtitle">RGF &mdash; Anexo II (LRF, art. 55, inciso I, al&#237;nea &quot;b&quot;) &middot; SEEC/SEFIN - Secretaria Executiva de Finan&#231;as, Or&#231;amento e Planejamento</div>
+    <p class="data-atualizacao" id="data-atualizacao">Carregando dados&#8230;</p>
+  </div>
+  <a href="../" class="btn-voltar">&#8592; Voltar</a>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Seletor + KPIs na mesma linha -->
+  <div class="topo-row">
+    <div class="sel-panel">
+      <span class="sel-label">At&#233; o M&#234;s</span>
+      <select class="mes-select" id="fMes" onchange="refresh()"></select>
+      <div class="sel-hint">Saldo acumulado desde janeiro at&#233; o m&#234;s selecionado</div>
+    </div>
+    <div class="kpi-col">
+      <div class="kpi-card dc">
+        <div class="kpi-label">D&#237;vida Consolidada (I)</div>
+        <div class="kpi-value" id="kv-dc">&#8212;</div>
+        <div class="kpi-sub" id="ks-dc">&mdash;</div>
+      </div>
+      <div class="kpi-card dcl">
+        <div class="kpi-label">D&#237;vida Consolidada L&#237;quida (III)</div>
+        <div class="kpi-value" id="kv-dcl">&#8212;</div>
+        <div class="kpi-sub" id="ks-dcl">&mdash;</div>
+      </div>
+      <div class="kpi-card pct">
+        <div class="kpi-label">% DCL sobre a RCL Ajustada</div>
+        <div class="kpi-value" id="kv-pct">&#8212;</div>
+        <div class="kpi-sub" id="ks-pct">Limite Senado Federal: 200%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela: Demonstrativo -->
+  <div class="table-panel">
+    <div class="table-panel-header"><h3>Demonstrativo da D&#237;vida Consolidada L&#237;quida</h3></div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:340px">Especifica&#231;&#227;o</th>
+            <th style="min-width:170px">Saldo (R$)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-dem"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  FONTE: SIAC &mdash; Sistema Integrado de Administra&#231;&#227;o Financeira e Cont&#225;bil<br>
+  Unidade de Informa&#231;&#245;es Fiscais / Contadoria Geral do DF / SEFIN / SEEC
+</div>
+
+<script>
+var D, RCL;
+var MESES_NOME={1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtNum(v){
+  if(v==null||isNaN(v)) return dash();
+  v=Math.round(v*100)/100;
+  if(v===0) return '0,00';
+  var abs=Math.abs(v);
+  var s=abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v<0?'<span style="color:#ef4444">('+s+')</span>':s;
+}
+function fmtBi(v){
+  if(v==null||isNaN(v)) return '—';
+  var abs=Math.abs(v),sig=v<0?'-':'';
+  if(abs>=1e9) return sig+'R$ '+(abs/1e9).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' bi';
+  if(abs>=1e6) return sig+'R$ '+(abs/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' mi';
+  return sig+'R$ '+abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtPct(v){
+  if(v==null||isNaN(v)) return dash();
+  return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+}
+function dash(){return '<span style="color:#cbd5e1">–</span>';}
+
+// ─── SELETOR ────────────────────────────────────────────────────────────────
+function setupMesSelect(){
+  var sel=document.getElementById('fMes');
+  sel.innerHTML='';
+  for(var m=1;m<=D.max_mes;m++){
+    var opt=document.createElement('option');
+    opt.value=m; opt.textContent=m+' – '+MESES_NOME[m]; sel.appendChild(opt);
+  }
+  sel.value=D.max_mes;
+  refresh();
+}
+function getMesSelecionado(){
+  return parseInt(document.getElementById('fMes').value,10);
+}
+
+// ─── ACUMULAR SALDO ATÉ O MÊS SELECIONADO (contas patrimoniais) ─────────────
+function acumular(mes){
+  var KEYS=['emprestimos_internos','emprestimos_externos','reestruturacao',
+    'financiamentos_internos','parc_tributos','parc_prev','parc_demais_contrib',
+    'precatorios','outras_dividas','caixa_bruta','rpp_inscrito',
+    'rpnp_a_pagar','depositos_restituiveis','demais_haveres'];
+  var acc={}; KEYS.forEach(function(k){acc[k]=0;});
+  for(var m=0;m<=mes;m++){
+    var pm=D.por_mes[String(m)]; if(!pm) continue;
+    KEYS.forEach(function(k){acc[k]+=(pm[k]||0);});
+  }
+  return acc;
+}
+
+// ─── RCL AJUSTADA (janela móvel de 12 meses terminando no mês/ano selecionado) ──
+function sumJanelaRcl(key, mes){
+  if(!RCL||!RCL.colunas||!RCL.linhas) return null;
+  var ano=D.ano;
+  var idx=RCL.colunas.indexOf(mes+','+ano);
+  if(idx<0||idx<11) return null;
+  var soma=0;
+  for(var i=idx-11;i<=idx;i++){
+    soma+=(RCL.linhas[key][RCL.colunas[i]]||0);
+  }
+  return soma;
+}
+
+// ─── COMPUTAR SNAPSHOT ──────────────────────────────────────────────────────
+function computeSnap(mes){
+  var a=acumular(mes);
+  var dividaContratual=a.emprestimos_internos+a.emprestimos_externos+a.reestruturacao
+    +a.financiamentos_internos+a.parc_tributos+a.parc_prev+a.parc_demais_contrib;
+  var DC=dividaContratual+a.precatorios+a.outras_dividas;
+  var rppSaldoAPagar=a.rpp_inscrito+a.rpnp_a_pagar;
+  var dispCaixa=a.caixa_bruta-rppSaldoAPagar-a.depositos_restituiveis;
+  var deducoes=dispCaixa+a.demais_haveres;
+  var DCL=DC-deducoes;
+
+  var RCLiv=sumJanelaRcl('rcl',mes);
+  var emendasV=sumJanelaRcl('emendas_ind',mes);
+  var RCLajustada=sumJanelaRcl('rcl_endiv',mes);
+
+  var pctDC=(RCLajustada!=null&&RCLajustada!==0)?(DC/RCLajustada*100):null;
+  var pctDCL=(RCLajustada!=null&&RCLajustada!==0)?(DCL/RCLajustada*100):null;
+  var limiteSenado=(RCLajustada!=null)?RCLajustada*2:null;
+  var limiteAlerta=(RCLajustada!=null)?RCLajustada*1.8:null;
+
+  return {a:a, dividaContratual:dividaContratual, DC:DC, rppSaldoAPagar:rppSaldoAPagar,
+    dispCaixa:dispCaixa, deducoes:deducoes, DCL:DCL, RCLiv:RCLiv, emendasV:emendasV,
+    RCLajustada:RCLajustada, pctDC:pctDC, pctDCL:pctDCL,
+    limiteSenado:limiteSenado, limiteAlerta:limiteAlerta};
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+function refresh(){
+  var mes=getMesSelecionado();
+  var snap=computeSnap(mes);
+  renderKPIs(snap);
+  renderTabela(snap);
+}
+
+function renderKPIs(s){
+  document.getElementById('kv-dc').textContent=fmtBi(s.DC);
+  document.getElementById('ks-dc').textContent='Até '+MESES_NOME[getMesSelecionado()]+'/'+D.ano;
+  document.getElementById('kv-dcl').textContent=fmtBi(s.DCL);
+  document.getElementById('ks-dcl').textContent='(I - II)';
+  document.getElementById('kv-pct').textContent=fmtPct(s.pctDCL);
+  document.getElementById('ks-pct').textContent=s.RCLajustada==null?'RCL indisponível para este mês':'Limite Senado Federal: 200%';
+}
+
+function row(nome,val,opts){
+  opts=opts||{};
+  var cls=opts.cls||'n2';
+  var ind=opts.ind?' '+opts.ind:'';
+  var dc=opts.ded?' ded':'';
+  var res=opts.res?' res':'';
+  var v=(val==null)?dash():fmtNum(val);
+  return '<tr class="'+cls+dc+res+'"><td class="name'+ind+'">'+escHtml(nome)+'</td><td class="num">'+v+'</td></tr>';
+}
+function sep(){return '<tr class="sep"><td colspan="2"></td></tr>';}
+
+function renderTabela(s){
+  var a=s.a;
+  var frags=[];
+  frags.push(row('DÍVIDA CONSOLIDADA-DC ( I )',s.DC,{cls:'n0'}));
+  frags.push(row('Dívida Mobiliária',0,{cls:'n1',ind:'ind1'}));
+  frags.push(row('Dívida Contratual',s.dividaContratual,{cls:'n1',ind:'ind1'}));
+  frags.push(row('Empréstimos',a.emprestimos_internos+a.emprestimos_externos,{cls:'n2',ind:'ind2'}));
+  frags.push(row('Internos',a.emprestimos_internos,{cls:'n3',ind:'ind3'}));
+  frags.push(row('Externos',a.emprestimos_externos,{cls:'n3',ind:'ind3'}));
+  frags.push(row('Reestruturação da Dívida de Estados e Municípios',a.reestruturacao,{cls:'n2',ind:'ind2'}));
+  frags.push(row('Financiamentos',a.financiamentos_internos,{cls:'n2',ind:'ind2'}));
+  frags.push(row('Internos',a.financiamentos_internos,{cls:'n3',ind:'ind3'}));
+  frags.push(row('Externos',0,{cls:'n3',ind:'ind3'}));
+  frags.push(row('Parcelamento e Renegociação de dívidas',a.parc_tributos+a.parc_prev+a.parc_demais_contrib,{cls:'n2',ind:'ind2'}));
+  frags.push(row('De Tributos',a.parc_tributos,{cls:'n3',ind:'ind3'}));
+  frags.push(row('De Contribuições Previdenciárias',a.parc_prev,{cls:'n3',ind:'ind3'}));
+  frags.push(row('De Demais Contribuições Sociais',a.parc_demais_contrib,{cls:'n3',ind:'ind3'}));
+  frags.push(row('Do FGTS',0,{cls:'n3',ind:'ind3'}));
+  frags.push(row('Com Instituição Não financeira',0,{cls:'n3',ind:'ind3'}));
+  frags.push(row('Demais Dívidas Contratuais',0,{cls:'n1',ind:'ind1'}));
+  frags.push(row('Precatórios Posteriores a 05/05/2000 (inclusive) - Vencidos e não pagos',a.precatorios,{cls:'n1',ind:'ind1'}));
+  frags.push(row('Outras Dívidas',a.outras_dividas,{cls:'n1',ind:'ind1'}));
+  frags.push(sep());
+
+  frags.push(row('DEDUÇÕES ( II )',s.deducoes,{cls:'n0 ded'}));
+  frags.push(row('Disponibilidade de Caixa',s.dispCaixa,{cls:'n1 ded',ind:'ind1'}));
+  frags.push(row('Disponibilidade de Caixa Bruta',a.caixa_bruta,{cls:'n2',ind:'ind2'}));
+  frags.push(row('(-) Restos a Pagar Processados (saldo a pagar)',s.rppSaldoAPagar,{cls:'n2 ded',ind:'ind2'}));
+  frags.push(row('(-) Depósitos Restituíveis e Valores Vinculados',a.depositos_restituiveis,{cls:'n2 ded',ind:'ind2'}));
+  frags.push(row('Demais Haveres Financeiros',a.demais_haveres,{cls:'n1',ind:'ind1'}));
+  frags.push(sep());
+
+  frags.push(row('DÍVIDA CONSOLIDADA LÍQUIDA-DCL ( III ) = ( I - II )',s.DCL,{cls:'n0 res'}));
+  frags.push(sep());
+
+  frags.push(row('RECEITA CORRENTE LÍQUIDA (RCL) ( IV )',s.RCLiv,{cls:'n1'}));
+  frags.push(row('(-) Transfer. Obrigat. da União relat. às emendas individuais (art. 166-A, § 1º, da CF) ( V )',s.emendasV,{cls:'n1 ded'}));
+  frags.push(row('RCL Ajustada para Cálculo dos Limites de Endividamento ( VI ) = ( IV - V )',s.RCLajustada,{cls:'n0'}));
+  frags.push(sep());
+
+  frags.push(row('% da DC sobre a RCL Ajustada ( I / VI )',s.pctDC,{cls:'n1'}));
+  frags.push(row('% da DCL sobre a RCL Ajustada ( III / VI )',s.pctDCL,{cls:'n1'}));
+  frags.push(sep());
+
+  frags.push(row('LIMITE DEFINIDO POR RESOLUÇÃO DO SENADO FEDERAL = 200% da RCL AJUSTADA',s.limiteSenado,{cls:'n0'}));
+  frags.push(row('LIMITE DE ALERTA (inciso III do § 1º do art. 59 da LRF) = 180% da RCL AJUSTADA',s.limiteAlerta,{cls:'n0'}));
+
+  document.getElementById('tbl-dem').innerHTML=frags.join('');
+}
+
+// ─── FETCH & INIT ────────────────────────────────────────────────────────────
+(function(){
+  var img=document.getElementById('brasao');
+  img.src='../tools/Bras%C3%A3o_do_Distrito_Federal_Brasil.png';
+  img.onerror=function(){img.style.display='none';};
+  var overlay=document.getElementById('loading-overlay');
+
+  function fetchJsonGz(url){
+    return fetch(url).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      var ds=new DecompressionStream('gzip');
+      return new Response(r.body.pipeThrough(ds)).text();
+    }).then(function(t){return JSON.parse(t);});
+  }
+
+  var SUPA_URL='https://otrlwfdtdrqpynemoexj.supabase.co';
+  var SUPA_KEY='sb_publishable_UKK5VWsrCXd1_zRR8tP16g_vySXJN5a';
+  function fetchSupabase(tabela, ano){
+    return fetch(SUPA_URL+'/rest/v1/'+tabela+'?select=dados,atualizado_em&ano=eq.'+ano,{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    }).then(function(r){
+      if(!r.ok) throw new Error('Supabase HTTP '+r.status);
+      return r.json();
+    }).then(function(rows){
+      if(!rows||!rows.length) throw new Error('Supabase: nenhum dado para '+ano);
+      var json=rows[0].dados;
+      json.atualizado_em=rows[0].atualizado_em;
+      return json;
+    });
+  }
+
+  var ano=new Date().getFullYear();
+
+  var pDC=fetchJsonGz('../data/gz/divida_consolidada.json.gz?v='+new Date().toISOString().slice(0,10))
+    .catch(function(){return fetchSupabase('divida_consolidada',ano);});
+
+  var pRCL=fetchJsonGz('../data/gz/rcl.json.gz?v='+new Date().toISOString().slice(0,10))
+    .catch(function(){return fetchSupabase('rcl',ano);})
+    .catch(function(err){console.warn('RCL indisponível:',err.message); return null;});
+
+  Promise.all([pDC,pRCL]).then(function(res){
+    D=res[0]; RCL=res[1];
+    overlay.style.display='none';
+    var el=document.getElementById('data-atualizacao');
+    if(el&&D.atualizado_em){
+      var d=new Date(D.atualizado_em);
+      el.textContent='Dados atualizados em: '+d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
+    }
+    setupMesSelect();
+  }).catch(function(err){
+    overlay.innerHTML='<div style="font-size:2rem">&#9888;&#65039;</div><div style="max-width:360px;text-align:center">Erro ao carregar dados: '+escHtml(err.message)+'</div>';
+  });
+})();
+</script>
+</body>
+</html>

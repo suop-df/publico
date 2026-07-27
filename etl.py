@@ -83,6 +83,11 @@ QUERIES = [
         "sql_file": "minimo_educacao.sql",
         "transform": "minimo_educacao",
     },
+    {
+        "file": "divida_consolidada.json",
+        "sql_file": "divida_consolidada.sql",
+        "transform": "divida_consolidada",
+    },
 ]
 
 
@@ -1992,6 +1997,195 @@ def upsert_minimo_educacao_supabase(D_obj):
         log.error(f"  Supabase minimo_educacao falhou: {type(e).__name__}: {e}")
 
 
+# ─── DÍVIDA CONSOLIDADA (RGF Anexo II) ───────────────────────────────────────
+# Regras: tools/regra_divida_consolidada.txt
+# Contas patrimoniais (saldo, não fluxo) — cada mês guarda o MOVIMENTO
+# incremental daquele INMES; o browser acumula INMES 0..mês selecionado para
+# obter o "saldo até o mês X" (mesmo conceito do demonstrativo oficial).
+
+_DC_COUG_EXCLUIDAS = {
+    320201, 320202, 320203, 320204, 320206,
+    190202, 190206, 190216, 190211,
+    130207, 190204,
+}
+_DC_COFONTE_PREFIXOS_EXCECAO = {
+    206, 233, 253, 254, 255, 263, 264, 265, 266, 267,
+    280, 406, 433, 453, 454, 455, 463, 464, 465, 466, 467, 480,
+}
+# Mesmo conjunto de prefixos, usado em dois sentidos opostos pela regra:
+# - Demais Haveres Financeiros: exceção que INCLUI a linha mesmo com COUG excluída.
+# - RPP Inscrito / RPP a Pagar / RPNP a Pagar: filtro que EXCLUI a linha
+#   quando o prefixo do COFONTE está nesta lista (SUBSTR(COFONTE,1,3) NOT IN ...).
+
+# Dívida Consolidada (I) — contas de código fixo (natureza segue a regra par/ímpar)
+_DC_CONTAS = {
+    212117201: "emprestimos_internos", 222110200: "emprestimos_internos", 212115201: "emprestimos_internos",
+    212217201: "emprestimos_externos", 222210200: "emprestimos_externos", 222910100: "emprestimos_externos", 212215201: "emprestimos_externos",
+    222130401: "reestruturacao", 212137401: "reestruturacao", 212135401: "reestruturacao",
+    222310102: "financiamentos_internos",
+    214136201: "parc_tributos", 224130201: "parc_tributos",
+    224130205: "parc_prev", 211435102: "parc_prev",
+    214138202: "parc_demais_contrib", 224130202: "parc_demais_contrib",
+    221210202: "precatorios", 113510802: "precatorios",
+    218910105: "outras_dividas", 218910108: "outras_dividas",
+}
+
+# 113510802 é conta de compensação ("Precatórios na Entidade Devedora") e,
+# apesar de começar com dígito ímpar, tem saldo apurado como as credoras
+# (VACREDITO-VADEBITO) — validado contra o oficial (Nota 3 do RGF Anexo II):
+# SUM(vacredito-vadebito) para (221210202,113510802) bate com o demonstrativo.
+_DC_PRECATORIOS_SEMPRE_CREDORA = {221210202, 113510802}
+
+_DC_DEMAIS_HAVERES_CONTAS = {
+    112410201, 112410302, 112410303, 112410304, 112910301,
+    121110301, 121110302, 121110321, 121110322, 121310102,
+}
+
+# Restos a Pagar — RPP Inscrito acumula todo o exercício (sem trava de
+# INMES=0). As duas métricas excluem GND 2 (Juros e Encargos da Dívida) e
+# GND 6 (Amortização da Dívida) via SUBSTR(CONATUREZA,2,1) NOT IN (2,6) —
+# esses valores já estão refletidos na Dívida Consolidada (I) e não devem
+# entrar de novo na dedução de RP.
+_RPP_INSCRITO_CONTAS = {632110100, 632110300}
+_RPNP_A_PAGAR_CONTAS = {631300000, 631810000}
+_DC_RP_GND_EXCLUIDOS = {"2", "6"}
+
+# Depósitos Restituíveis e Valores Vinculados: faixa 218800000-218899999,
+# com sub-faixas e contas específicas excluídas pela regra.
+_DC_DEP_RESTIT_EXCL_RANGES = [
+    (218819800, 218819899), (218839800, 218839999), (218820000, 218829999),
+]
+_DC_DEP_RESTIT_EXCL_CONTAS = {
+    218810110, 218810111, 218810115, 218810135, 218810136, 218810137, 218810199,
+    218810200, 218810304, 218810405, 218830102, 218830104, 218830118, 218830119,
+    218830125, 218830130, 218830140, 218830141, 218830142, 218830199,
+}
+
+_DC_KEYS = [
+    "emprestimos_internos", "emprestimos_externos", "reestruturacao",
+    "financiamentos_internos", "parc_tributos", "parc_prev", "parc_demais_contrib",
+    "precatorios", "outras_dividas",
+    "caixa_bruta", "rpp_inscrito", "rpnp_a_pagar",
+    "depositos_restituiveis", "demais_haveres",
+]
+
+
+def _dc_saldo(conta, vad, vac):
+    """Regra geral: 1as digito ímpar = natureza devedora, par = credora."""
+    primeiro = int(str(conta)[0])
+    return (vad - vac) if primeiro % 2 == 1 else (vac - vad)
+
+
+def build_divida_consolidada_data(rows):
+    ano_atual = datetime.now().year
+    M = {m: {k: 0.0 for k in _DC_KEYS} for m in range(0, 13)}
+
+    for r in rows:
+        try:
+            conta = int(r.get("cocontacontabil") or 0)
+        except (ValueError, TypeError):
+            continue
+        if not conta:
+            continue
+        mes = int(r.get("inmes") or 0)
+        if mes < 0 or mes > 12:
+            continue
+        vad = float(r.get("vadebito") or 0)
+        vac = float(r.get("vacredito") or 0)
+        if conta in _DC_PRECATORIOS_SEMPRE_CREDORA:
+            saldo = vac - vad
+        else:
+            saldo = _dc_saldo(conta, vad, vac)
+        if not saldo:
+            continue
+
+        cofonte_raw = r.get("cofonte")
+        try:
+            cofonte = int(str(cofonte_raw).strip()) if cofonte_raw not in (None, "") else 0
+        except (ValueError, TypeError):
+            cofonte = 0
+        prefixo = int(str(cofonte)[:3]) if cofonte else -1
+
+        if conta in _RPP_INSCRITO_CONTAS or conta in _RPNP_A_PAGAR_CONTAS:
+            conatureza = str(r.get("conatureza") or "")
+            gnd = conatureza[1:2]
+            if gnd in _DC_RP_GND_EXCLUIDOS or prefixo in _DC_COFONTE_PREFIXOS_EXCECAO:
+                continue
+            if conta in _RPP_INSCRITO_CONTAS:
+                M[mes]["rpp_inscrito"] += saldo
+            else:
+                M[mes]["rpnp_a_pagar"] += saldo
+            continue
+
+        try:
+            coug = int(r.get("coug") or 0)
+        except (ValueError, TypeError):
+            coug = 0
+
+        if conta in _DC_DEMAIS_HAVERES_CONTAS:
+            if not (coug in _DC_COUG_EXCLUIDAS and prefixo not in _DC_COFONTE_PREFIXOS_EXCECAO):
+                M[mes]["demais_haveres"] += saldo
+            continue
+
+        key = _DC_CONTAS.get(conta)
+        if key:
+            M[mes][key] += saldo
+            continue
+
+        if (111110000 <= conta <= 111999999) or (114110901 <= conta <= 114110999):
+            if coug not in _DC_COUG_EXCLUIDAS:
+                M[mes]["caixa_bruta"] += saldo
+            continue
+
+        if 218800000 <= conta <= 218899999:
+            if any(lo <= conta <= hi for lo, hi in _DC_DEP_RESTIT_EXCL_RANGES):
+                continue
+            if conta in _DC_DEP_RESTIT_EXCL_CONTAS:
+                continue
+            if coug in _DC_COUG_EXCLUIDAS:
+                continue
+            M[mes]["depositos_restituiveis"] += saldo
+            continue
+
+    max_mes = next((m for m in range(12, 0, -1)
+                    if any(M[m][k] != 0.0 for k in _DC_KEYS)), 1)
+
+    por_mes = {}
+    for mes in range(0, max_mes + 1):
+        por_mes[str(mes)] = {k: round(M[mes][k], 2) for k in _DC_KEYS}
+
+    log.info(f"  Dívida Consolidada: max_mes={max_mes}")
+    return {"ano": ano_atual, "max_mes": max_mes, "por_mes": por_mes}
+
+
+def save_divida_consolidada_gz(D_obj):
+    payload = {"atualizado_em": datetime.now(timezone.utc).isoformat()}
+    payload.update(D_obj)
+    content = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    gz_path = GZ_DIR / "divida_consolidada.json.gz"
+    with gzip.open(gz_path, "wb", compresslevel=9) as f:
+        f.write(content)
+    size_kb = gz_path.stat().st_size / 1024
+    log.info(f"  divida_consolidada.json.gz -- {size_kb:.1f} KB")
+
+
+def upsert_divida_consolidada_supabase(D_obj):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        log.warning("  Supabase: nao configurado. Pulando upsert divida_consolidada.")
+        return
+    try:
+        ano = D_obj.get("ano") or datetime.now().year
+        payload = [{
+            "ano":           ano,
+            "dados":         D_obj,
+            "atualizado_em": datetime.now(timezone.utc).isoformat(),
+        }]
+        total = _supabase_upsert("divida_consolidada", payload, "ano")
+        log.info(f"  Supabase: divida_consolidada {ano} enviada ({total} linha).")
+    except Exception as e:
+        log.error(f"  Supabase divida_consolidada falhou: {type(e).__name__}: {e}")
+
+
 def init_oracle():
     import oracledb
     if CLIENT_PATH:
@@ -2054,6 +2248,11 @@ def run():
                         D_obj = build_minimo_educacao_data(data)
                         save_minimo_educacao_gz(D_obj)
                         upsert_minimo_educacao_supabase(D_obj)
+                        save_json(item["file"], data)
+                    elif item.get("transform") == "divida_consolidada":
+                        D_obj = build_divida_consolidada_data(data)
+                        save_divida_consolidada_gz(D_obj)
+                        upsert_divida_consolidada_supabase(D_obj)
                         save_json(item["file"], data)
                     elif item["file"] == "receita.json":
                         save_json(item["file"], data)
