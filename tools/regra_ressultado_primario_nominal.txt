@@ -50,22 +50,17 @@ RECEITAS CORRENTES (EXCETO FONTES RPPS) (I): Somatório
 
 		Outras Transferências Correntes: SUBSTR(COCLASSEORC,1,2) IN (17,77) AND NOT (SUBSTR(COCLASSEORC,1,4) IN (1715,1751,7715,7751) OR SUBSTR(COCLASSEORC,1,6) IN (171150,,171152,171153,172152,771150,,771152,771153,772152) 						OR SUBSTR(COCLASSEORC,1,7) IN (1711511,1711512,7711511,7711512))
 	Demais Receitas Correntes: Somatório
-		Outras Receitas Financeiras (III): SUBSTR(COCLASSEORC,1,4) IN (1944,7944) OR SUBSTR(COCLASSEORC,1,6) IN (164101,164103,199911,764101,764103,799911)  OR SUBSTR(COCLASSEORC,1,7) IN 												(1922012,1922064,1922142,1999993,7922012,7922064,7922142,7999993)
-		Receitas Correntes Restantes: 	SUBSTR(COCLASSEORC,1,2) IN (14,15,16,19,74,75,76,79) AND (SUBSTR(COCLASSEORC,1,4) NOT IN (1944,7944) OR SUBSTR(COCLASSEORC,1,6) NOT IN (164101,164103,764101,764103,199911,799911) OR 							SUBSTR(COCLASSEORC,1,7) NOT  IN (1922012,1922064,1922142,1999993,7922012,7922064,7922142,7999993))
+		Outras Receitas Financeiras (III): (SUBSTR(COCLASSEORC,1,4) IN (1944,7944) OR SUBSTR(COCLASSEORC,1,6) IN (164101,164103,199911,764101,764103,799911)  OR SUBSTR(COCLASSEORC,1,7) IN 												(1922012,1922064,1922142,1999993,7922012,7922064,7922142,7999993)) AND COCLASSEORC <> 19220121
+		Receitas Correntes Restantes: 	(SUBSTR(COCLASSEORC,1,2) IN (14,15,16,19,74,75,76,79) AND (SUBSTR(COCLASSEORC,1,4) NOT IN (1944,7944) OR SUBSTR(COCLASSEORC,1,6) NOT IN (164101,164103,764101,764103,199911,799911) OR 							SUBSTR(COCLASSEORC,1,7) NOT  IN (1922012,1922064,1922142,1999993,7922012,7922064,7922142,7999993))) OR COCLASSEORC = 19220121
 
+	OBS: exceção validada contra o RREO oficial do 1º e 2º bim/2026 (era a única divergência da
+	coluna PREVISÃO ATUALIZADA, R$ 77,00 — com a exceção, as 38 linhas da coluna batem exatamente
+	com o oficial nos dois bimestres). Implementada no etl.py como _OUT_FIN_EXCECOES.
 
-	OBS — EXCEÇÃO AO CASAMENTO POR 7 DÍGITOS (validada contra o RREO oficial do 1º e 2º bim/2026):
-	  O coclasseorc 19220121 casa com o prefixo 1922012 listado acima, mas o demonstrativo oficial
-	  NÃO o classifica em "Outras Receitas Financeiras (III)" — ele entra em "Receitas Correntes
-	  Restantes". Implementado no etl.py como exceção explícita (_OUT_FIN_EXCECOES).
-	  Era a única divergência da coluna PREVISÃO ATUALIZADA (R$ 77,00); com a exceção, as 38 linhas
-	  da coluna batem exatamente com o oficial nos dois bimestres.
-
-	  PENDENTE confirmar com a ContDF a lista definitiva de códigos: dos 4 prefixos listados
-	  (1922012, 1922064, 1922142, 1999993), apenas 1922012 casa com algum código existente na base
-	  — justamente o que o oficial exclui. Os prefixos também não podem ser lidos como códigos de
-	  8 dígitos truncados: nenhum coclasseorc da base termina em 0.
-	  A mesma lista de prefixos aparece nas regras de (V) e (VI) abaixo e herda a mesma exceção.
+	PENDENTE confirmar com a ContDF a lista definitiva de códigos: dos 4 prefixos listados
+	(1922012, 1922064, 1922142, 1999993), apenas 1922012 casa com algum código existente na base
+	— justamente o que o oficial exclui. Os prefixos também não podem ser lidos como códigos de
+	8 dígitos truncados: nenhum coclasseorc da base termina em 0.
 
 RECEITAS PRIMÁRIAS CORRENTES (EXCETO FONTES RPPS) (IV) = (I - II - III): Resultado da fórmula (I-II-III)
 RECEITAS PRIMÁRIAS CORRENTES (COM FONTES RPPS) (V): SUBSTR(COCLASSEORC,1,2) IN (11,12,13,14,15,16,17,19,71,72,73,74,75,76,77,79) AND NOT (SUBSTR(COCLASSEORC,1,4) IN (1944,7944) OR 
