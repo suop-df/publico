@@ -199,7 +199,7 @@ tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transpa
         <thead>
           <tr>
             <th class="left" style="min-width:320px">Especifica&#231;&#227;o</th>
-            <th style="min-width:155px">Previ&#227;o Atualizada (R$)</th>
+            <th style="min-width:155px" title="Or&#231;amento vigente acumulado de janeiro at&#233; o m&#234;s selecionado">Previs&#227;o Atualizada (R$)</th>
             <th style="min-width:155px">Receitas Realizadas (R$)</th>
           </tr>
         </thead>
@@ -325,6 +325,37 @@ function getSelectedMeses(){
   return Array.from(document.getElementById('fMes').selectedOptions).map(function(o){return String(o.value);});
 }
 
+// ─── PREVISÃO ATUALIZADA ────────────────────────────────────────────────────
+// A previsão é ESTOQUE (orçamento vigente), não fluxo: acumula do mês 1 até o
+// maior mês selecionado, reproduzindo a foto do RREO daquele bimestre. Somar
+// só os meses marcados daria o movimento de créditos adicionais, não o
+// orçamento vigente.
+var PREV_KEYS=['I','II','III','V','VII','VIII','IX','X','XI','XII','XIV',
+  'icms','ipva','itcd','iptu','itbi','iss','ir','outros_impostos','taxas',
+  'contribuicoes','outras_patrimoniais',
+  'fpe','fpm','itr_trans','lc87','lc61','fundeb','outras_transf_corr',
+  'correntes_restantes',
+  'outras_alienacoes','convenios','outras_transf_cap','outras_cap_prim'];
+
+function computePrevisao(meses){
+  // gz antigo (sem previsao_por_mes): mantém o comportamento anterior
+  if(!D.previsao_por_mes) return D.previsao||{};
+  var maxMes=D.max_mes;
+  if(meses&&meses.length){
+    maxMes=meses.reduce(function(a,m){var n=Number(m);return n>a?n:a;},0);
+  }
+  var p={}; PREV_KEYS.forEach(function(k){p[k]=0;});
+  for(var m=1;m<=maxMes;m++){
+    var pm=D.previsao_por_mes[String(m)]; if(!pm) continue;
+    PREV_KEYS.forEach(function(k){p[k]+=(pm[k]||0);});
+  }
+  p.IV   = p.I - p.II - p.III;
+  p.XIII = p.VII - (p.VIII + p.IX + p.X + p.XI + p.XII);
+  p.XVI  = p.IV + p.V + p.XIII + p.XIV;
+  p.XVII = p.IV + p.XIII;
+  return p;
+}
+
 // ─── COMPUTAR SNAPSHOT ──────────────────────────────────────────────────────
 function computeSnap(meses){
   var REC=['I','II','III','V','VII','VIII','IX','X','XI','XII','XIV',
@@ -406,7 +437,8 @@ function computeSnap(meses){
       invest:fmt7(d.investimentos), demais_inv:fmt7(d.demais_inv),
       inv_fin:fmt7(gr_inv_fin)
     },
-    res:{XXXIV:XXXIV,XXXV:XXXV,XXXVIII:XXXVIII}
+    res:{XXXIV:XXXIV,XXXV:XXXV,XXXVIII:XXXVIII},
+    prev:computePrevisao(meses)
   };
 }
 
@@ -507,7 +539,7 @@ var ROWS_REC=[
 ];
 
 function renderReceitas(snap){
-  var prev=D.previsao;
+  var prev=snap.prev;
   var frags=[];
   ROWS_REC.forEach(function(r){
     if(r.sep){frags.push('<tr class="sep"><td colspan="3"></td></tr>');return;}

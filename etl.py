@@ -892,14 +892,25 @@ def build_resultado_primario_nominal_data(rows):
         "pessoal","outras_correntes_dep","investimentos","demais_inv",
     ]
 
-    M_rec = {m: {k: 0.0 for k in REC_KEYS} for m in range(1, 13)}
-    M_dep = {m: {k: [0.0] * 7 for k in DEP_KEYS} for m in range(1, 13)}
-    M_jur = {m: {"XXXVI": 0.0, "XXXVII": 0.0} for m in range(1, 13)}
-    P_rec = {k: 0.0 for k in REC_KEYS}
+    M_rec  = {m: {k: 0.0 for k in REC_KEYS} for m in range(1, 13)}
+    M_dep  = {m: {k: [0.0] * 7 for k in DEP_KEYS} for m in range(1, 13)}
+    M_jur  = {m: {"XXXVI": 0.0, "XXXVII": 0.0} for m in range(1, 13)}
+    # Previsão Atualizada por mês: é ESTOQUE (orçamento vigente), não fluxo —
+    # o mês indica quando o crédito adicional entrou. O dashboard acumula do
+    # mês 1 até o mês selecionado, reproduzindo a foto do RREO do bimestre.
+    M_prev = {m: {k: 0.0 for k in REC_KEYS} for m in range(1, 13)}
 
     _APLIC_FIN = {"132101","132102","132103","132104","132105","132999",
                   "732101","732102","732103","732104","732105","732999"}
     _FUNDEB_4  = {"1715","1751","7715","7751"}
+    # Outras Receitas Financeiras (III) — exceção ao casamento por 7 dígitos.
+    # A regra documentada casa SUBSTR(COCLASSEORC,1,7) IN (1922012,...), o que
+    # captura 19220121; mas o RREO oficial (1º e 2º bim/2026) NÃO o trata como
+    # receita financeira — classifica em "Receitas Correntes Restantes".
+    # Não dá para ler os prefixos da regra como códigos de 8 dígitos truncados:
+    # nenhum coclasseorc da base termina em 0. Por isso a exceção é explícita,
+    # validada contra o oficial (era a única divergência de previsão: R$ 77,00).
+    _OUT_FIN_EXCECOES = {"19220121"}
 
     def _classifica_rec(val, co, cc_corr, is_exceto_rpps, bucket):
         co2, co3, co4, co6, co7 = co[:2], co[:3], co[:4], co[:6], co[:7]
@@ -911,10 +922,11 @@ def build_resultado_primario_nominal_data(rows):
                                "71","72","73","74","75","76","77","79"}
         is_capital  = co2 in {"21","22","23","24","29","81","82","83","84","89"}
         is_aplic    = cc_corr[:6] in _APLIC_FIN
-        is_out_fin  = (co4 in {"1944","7944"} or
-                       co6 in {"164101","164103","199911","764101","764103","799911"} or
-                       co7 in {"1922012","1922064","1922142","1999993",
-                                "7922012","7922064","7922142","7999993"})
+        is_out_fin  = (co not in _OUT_FIN_EXCECOES and
+                       (co4 in {"1944","7944"} or
+                        co6 in {"164101","164103","199911","764101","764103","799911"} or
+                        co7 in {"1922012","1922064","1922142","1999993",
+                                 "7922012","7922064","7922142","7999993"}))
 
         if is_exceto_rpps:
             if is_corrente:
@@ -1017,7 +1029,11 @@ def build_resultado_primario_nominal_data(rows):
             _classifica_rec(vacred - vadeb, co, cc_corr, is_exceto_rpps, M_rec[mes])
 
         elif cc4 in {"5211","5212"}:
-            _classifica_rec(vadeb - vacred, co, cc_corr, is_exceto_rpps, P_rec)
+            # Estoque: acumulado pelo browser do mês 1 até o mês selecionado.
+            # inmes fora de 1..12 (não ocorre hoje) cai no mês 1, para não
+            # perder valor nem inflar um mês intermediário.
+            mes_prev = mes if 1 <= mes <= 12 else 1
+            _classifica_rec(vadeb - vacred, co, cc_corr, is_exceto_rpps, M_prev[mes_prev])
 
         else:
             if not mes or mes > 12:
@@ -1064,13 +1080,23 @@ def build_resultado_primario_nominal_data(rows):
         max_mes = next((m for m in range(12, 0, -1)
                         if any(any(v != 0.0 for v in M_dep[m][k]) for k in DEP_KEYS)), 1)
 
-    P_IV   = P_rec["I"]   - P_rec["II"]  - P_rec["III"]
-    P_XIII = P_rec["VII"] - (P_rec["VIII"] + P_rec["IX"] + P_rec["X"] + P_rec["XI"] + P_rec["XII"])
-    previsao = {k: round(P_rec[k], 2) for k in REC_KEYS}
+    # previsao_por_mes: consumido pelo dashboard, que acumula 1..mês selecionado.
+    # Só emite meses com algum movimento (o mês 1 sempre entra, é a LOA inicial).
+    previsao_por_mes = {}
+    for mes in range(1, 13):
+        if mes == 1 or any(M_prev[mes][k] != 0.0 for k in REC_KEYS):
+            previsao_por_mes[str(mes)] = {k: round(M_prev[mes][k], 2) for k in REC_KEYS}
+
+    # previsao (total do exercício): mantido para compatibilidade — uma versão
+    # antiga do HTML em cache de CDN continua funcionando como antes.
+    P_tot  = {k: sum(M_prev[m][k] for m in range(1, 13)) for k in REC_KEYS}
+    P_IV   = P_tot["I"]   - P_tot["II"]  - P_tot["III"]
+    P_XIII = P_tot["VII"] - (P_tot["VIII"] + P_tot["IX"] + P_tot["X"] + P_tot["XI"] + P_tot["XII"])
+    previsao = {k: round(P_tot[k], 2) for k in REC_KEYS}
     previsao.update({
         "IV":   round(P_IV, 2),
         "XIII": round(P_XIII, 2),
-        "XVI":  round(P_IV + P_rec["V"] + P_XIII + P_rec["XIV"], 2),
+        "XVI":  round(P_IV + P_tot["V"] + P_XIII + P_tot["XIV"], 2),
         "XVII": round(P_IV + P_XIII, 2),
     })
 
@@ -1083,8 +1109,10 @@ def build_resultado_primario_nominal_data(rows):
                     "XXXVII": round(M_jur[mes]["XXXVII"], 2)},
         }
 
-    log.info(f"  Resultado Primário/Nominal: max_mes={max_mes}, meses={list(por_mes.keys())}")
-    return {"max_mes": max_mes, "previsao": previsao, "por_mes": por_mes}
+    log.info(f"  Resultado Primário/Nominal: max_mes={max_mes}, meses={list(por_mes.keys())}, "
+             f"previsão nos meses {list(previsao_por_mes.keys())}")
+    return {"max_mes": max_mes, "previsao": previsao,
+            "previsao_por_mes": previsao_por_mes, "por_mes": por_mes}
 
 
 def build_minimo_saude_data(rows):
