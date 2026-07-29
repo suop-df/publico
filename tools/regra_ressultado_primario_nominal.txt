@@ -206,7 +206,8 @@ RESULTADO NOMINAL (SEM RPPS) - Abaixo da Linha (XLIII) = (XLIIa - XLIIb)
 
 QUADRO BAIXO DA LINHA:
 
-OS dados da DC vêm do build_divida_consolidada_data 
+Obs: dados da Dívida Consolidada vêm do build_divida_consolidada_data 
+
 DÍVIDA CONSOLIDADA (XXXIX): 
 DEDUÇÕES (XL): 
 	Disponibilidade de Caixa: 

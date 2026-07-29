@@ -1,0 +1,124 @@
+============================================================
+ REGRA - DETALHAMENTO DE IMPOSTOS (origem: Receita Orçamentária)
+ Contadoria Geral do Distrito Federal - ContDF/SEEC
+ Criado em: 14/07/2026
+============================================================
+
+1. OBJETIVO
+   Detalhar a receita de Impostos além do nível de Espécie hoje exibido
+   no dashboard balanco_orcamentario/receita_orcamentaria.html, usando a
+   mesma origem de dados, descendo até Tipo, Detalhe e Receita (código
+   completo de 8 dígitos).
+
+2. FONTE DE DADOS
+   - Mesma fonte do dashboard de origem: data/queries/RECEITA.sql, via
+     mil2001.saldocontabil_ex + {SCHEMA_ANO}.classificacaoorcamentaria.
+   - Nenhuma alteração de SQL é necessária: RECEITA.sql já traz prontos
+     os campos granulares usados neste detalhamento (tipo_receita,
+     detalhe_receita, receita e seus nomes) — ver seção 5.
+   - Dataset já publicado: data/gz/receita.json.gz (mesmo arquivo
+     consumido pelo dashboard de origem).
+
+3. FILTROS APLICADOS (fixos, escopo deste relatório)
+   - Categoria Econômica: TODAS — não filtrar por categoria (Impostos é
+     sempre categoria_economica = '10000000', Receitas Correntes, mas o
+     filtro fica aberto, igual ao padrão do radio "Todas" do dashboard
+     de origem).
+   - Espécie da Receita: IMPOSTOS (fixo)
+     SQL: SUBSTR(v.cocontacorrente, 1, 3) = '111'
+     equivalente ao campo já calculado: especie_receita = '11100000'
+     equivalente a: COCLASSEORC BETWEEN 11100000 AND 11199999
+     (confirmado em dados reais 2026: especie_receita único = '11100000',
+     origem_receita = '11000000' — "Impostos, Taxas e Contribuições de
+     Melhoria")
+   - Intraorçamentárias: não se aplica — Impostos nunca é intra
+     (categoria econômica intra começa em 7/8; Impostos é sempre 1).
+
+4. ESTRUTURA DA TABELA (hierarquia ALÉM da espécie)
+   Como a Espécie já está fixa em "Impostos", a hierarquia de exibição
+   começa direto no nível seguinte ao da tabela do dashboard de origem:
+     Nível 1 - Tipo da Receita     (tipo_receita / nome_tipo_receita)     — 6 dígitos
+       Nível 2 - Detalhe da Receita (detalhe_receita / nome_detalhe_receita) — 7 dígitos
+         Nível 3 - Receita (código completo) (receita / nome_receita)    — 8 dígitos
+   Ordenação: por código dentro de cada nível (igual ao dashboard de
+   origem). Aplicar a mesma regra de omissão de nível intermediário
+   quando ele tiver apenas 1 filho (ver seção 14.1 de
+   regra_receita_orcamentaria.txt), entre Tipo→Detalhe e Detalhe→Receita.
+
+5. CAMPOS DO SQL UTILIZADOS (RECEITA.sql / classificacaoorcamentaria)
+   - v.cocontacontabil, v.cocontacorrente, v.vadebito, v.vacredito
+   - SALDO = vacredito - vadebito (cocontacontabil LIKE '6%', realizado)
+   - COCLASSEORC (classificacaoorcamentaria) — código de classificação
+     orçamentária, casado por SUBSTR(cocontacorrente, ...) em cada nível:
+       ESPECIE_RECEITA = SUBSTR(cocontacorrente,1,3) || '00000'  (3 díg.)
+       TIPO_RECEITA    = SUBSTR(cocontacorrente,1,6) || '00'     (6 díg.)
+       DETALHE_RECEITA = SUBSTR(cocontacorrente,1,7) || '0'      (7 díg.)
+       RECEITA         = SUBSTR(cocontacorrente,1,8)             (8 díg.)
+   - NOCLASSIFICACAO (nome) — mesmo JOIN já existente em RECEITA.sql
+     (c_tip, c_det, c_rec) para os 3 níveis acima; nenhum JOIN novo
+     precisa ser criado.
+
+6. VALOR REALIZADO
+   - Mesma regra do dashboard de origem: soma do SALDO das contas
+     contábeis entre 621200000 e 621399999 (classe 6), acumulado até o
+     mês selecionado (inmes <= mesSel).
+   - Comparação Ano Atual x Ano Anterior, igual ao dashboard de origem
+     (ANO_ATUAL / ANO_ANTERIOR).
+
+7. TIPOS DE IMPOSTOS IDENTIFICADOS
+   Validado contra dados reais de data/gz/receita.json.gz (exercício
+   2026, linhas com nome_especie_receita = 'Impostos'). Nomes-síntese
+   alinhados com a classificação já usada em tools/regra_rcl.txt (mesmas
+   faixas de COCLASSEORC da regra de RECEITAS CORRENTES da RCL):
+
+	IPTU — Imposto sobre a Propriedade Predial e Territorial Urbana
+		Tipo: 111250 ; COCLASSEORC BETWEEN 11125000 AND 11125099
+
+	IPVA — Imposto sobre a Propriedade de Veículos Automotores
+		Tipo: 111251 ; COCLASSEORC BETWEEN 11125100 AND 11125199
+
+	ITCD — Imposto sobre Transmissão "Causa Mortis" e Doação de Bens e Direitos
+		Tipo: 111252 ; COCLASSEORC BETWEEN 11125200 AND 11125299
+
+	ITBI — Imposto sobre Transmissão "Inter Vivos" de Bens Imóveis e de Direitos
+		Tipo: 111253 ; COCLASSEORC BETWEEN 11125300 AND 11125399
+
+	Imposto sobre a Renda e Proventos de Qualquer Natureza (IRPJ + IRRF)
+		Tipo: 111302 (IRPJ) e 111303 (IRRF) ; COCLASSEORC BETWEEN 11130000 AND 11139999
+		Detalhe observado nos dados: 11130200 (IRPJ líquida de incentivo),
+		11130310 (IRRF-Trabalho), 11130320 (IRRF-Capital),
+		11130330 (IRRF-Remessa ao Exterior), 11130340 (IRRF-Outros Rendimentos)
+
+	ICMS — Imposto sobre Operações relativas à Circulação de Mercadorias e sobre
+	       Prestação de Serviços de Transporte Interestadual e Intermunicipal e de Comunicação
+		Tipo: 111450 ; COCLASSEORC BETWEEN 11145010 AND 11145099
+		Detalhe observado nos dados: 11145010 (ICMS), 11145020 (Adicional ICMS —
+		Fundo Estadual de Combate à Pobreza)
+		Nota: tools/regra_rcl.txt também inclui a faixa 11145200-11145299 na
+		regra de ICMS da RCL; essa faixa NÃO aparece nos dados reais de 2026
+		(código sem movimento no exercício) — mantida aqui só como referência
+		herdada da RCL, não confirmada em dados correntes.
+
+	ISS — Imposto sobre Serviços de Qualquer Natureza
+		Tipo: 111451 ; COCLASSEORC BETWEEN 11145100 AND 11145199
+
+	Outros Impostos
+		Tipo: 111999 ; COCLASSEORC BETWEEN 11190000 AND 11199999
+		Detalhe/Receita observados nos dados: 11199900 (nível Detalhe);
+		11199903 (Dívida Ativa), 11199905 (Multas), 11199906 (Juros de Mora),
+		11199907 (Dívida Ativa-Multas), 11199908 (Dívida Ativa-Juros de mora)
+
+8. OBSERVAÇÕES
+   - Nenhuma mudança necessária em etl.py ou em data/queries/RECEITA.sql:
+     os campos tipo_receita/detalhe_receita/receita e seus nomes já vêm
+     prontos no data/gz/receita.json.gz atual.
+   - Implementação sugerida: reaproveitar o mesmo array REGISTROS já
+     carregado em receita_orcamentaria.html, aplicando um filtro
+     adicional (especie_receita === '11100000', equivalente a
+     nome_especie_receita === 'Impostos') e trocando a hierarquia de
+     montagem da tabela para Tipo→Detalhe→Receita em vez de
+     Categoria→Origem→Espécie→Tipo.
+   - Este documento descreve a REGRA de dados; a implementação de tela
+     (HTML, filtros de mês/UG/fonte, cards, gráficos etc.) fica a cargo
+     de quem for construir o relatório, seguindo o padrão visual e de
+     filtros já definido em tools/regra_receita_orcamentaria.txt.
