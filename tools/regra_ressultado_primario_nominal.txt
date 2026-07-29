@@ -204,9 +204,18 @@ DÍVIDA CONSOLIDADA LÍQUIDA (XLII) = (XXXIX - XL)
 RESULTADO NOMINAL (SEM RPPS) - Abaixo da Linha (XLIII) = (XLIIa - XLIIb)
 
 
+QUADRO BAIXO DA LINHA:
 
-
-
+OS dados da DC vêm do build_divida_consolidada_data 
+DÍVIDA CONSOLIDADA (XXXIX): 
+DEDUÇÕES (XL): 
+	Disponibilidade de Caixa: 
+		Disponibilidade de Caixa Bruta:
+		(-) Restos a Pagar Processados (XLI):
+		(-) Depósitos Restituíveis e Valores Vinculados:
+	Demais Haveres Financeiros
+DÍVIDA CONSOLIDADA LÍQUIDA (XLII) = (XXXIX - XL): Resultado da fórmula (XXXIX - XL)
+RESULTADO NOMINAL (SEM RPPS) - Abaixo da Linha (XLIII) = (XLIIa - XLIIb): Resultado da fórmula (XLIIa - XLIIb)
 
 
 

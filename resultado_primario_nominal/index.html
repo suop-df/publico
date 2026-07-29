@@ -168,6 +168,12 @@ tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transpa
         <span class="kpi-badge" id="kb-xxxviii">&nbsp;</span>
         <div class="kpi-sub">Acima da Linha &mdash; 2026</div>
       </div>
+      <div class="kpi-card neutral" id="kpi-xliii">
+        <div class="kpi-label">Resultado Nominal (sem RPPS)</div>
+        <div class="kpi-value" id="kv-xliii">&#8212;</div>
+        <span class="kpi-badge" id="kb-xliii">&nbsp;</span>
+        <div class="kpi-sub">Abaixo da Linha &mdash; 2026</div>
+      </div>
     </div>
   </div>
 
@@ -278,6 +284,26 @@ tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transpa
     </div>
   </div>
 
+  <!-- Tabela: Abaixo da Linha (Dívida Consolidada) -->
+  <div class="table-panel">
+    <div class="table-panel-header">
+      <h3>C&#225;lculo do Resultado Nominal &mdash; Abaixo da Linha</h3>
+    </div>
+    <div class="table-wrap">
+      <table class="dem">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:340px">Especifica&#231;&#227;o</th>
+            <th style="min-width:160px">Em 31/Dez/2025 (a)</th>
+            <th style="min-width:160px">At&#233; o Bimestre 2026 (b)</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-abaixo"></tbody>
+      </table>
+    </div>
+    <div id="abaixo-nota" style="padding:8px 20px 12px;font-size:.66rem;color:#94a3b8"></div>
+  </div>
+
 </div>
 
 <!-- ══ FOOTER ══ -->
@@ -287,7 +313,7 @@ tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transpa
 </div>
 
 <script>
-var D;
+var D, DC;
 var MESES_NOME={1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -354,6 +380,46 @@ function computePrevisao(meses){
   p.XVI  = p.IV + p.V + p.XIII + p.XIV;
   p.XVII = p.IV + p.XIII;
   return p;
+}
+
+// ─── ABAIXO DA LINHA (reaproveita build_divida_consolidada_data) ────────────
+// Mesmas fórmulas do dashboard da Dívida Consolidada — DC é estoque, então
+// acumula do mês 0 (saldo de abertura = fechamento do exercício anterior)
+// até o mês escolhido, igual lá.
+var DC_KEYS=['emprestimos_internos','emprestimos_externos','reestruturacao',
+  'financiamentos_internos','parc_tributos','parc_prev','parc_demais_contrib',
+  'precatorios','outras_dividas','caixa_bruta','rpp_inscrito',
+  'rpnp_a_pagar','depositos_restituiveis','demais_haveres'];
+
+function acumularDC(mes){
+  var acc={}; DC_KEYS.forEach(function(k){acc[k]=0;});
+  if(!DC) return acc;
+  for(var m=0;m<=mes;m++){
+    var pm=DC.por_mes[String(m)]; if(!pm) continue;
+    DC_KEYS.forEach(function(k){acc[k]+=(pm[k]||0);});
+  }
+  return acc;
+}
+
+function snapshotDC(mes){
+  var raw=acumularDC(mes);
+  var dividaContratual=raw.emprestimos_internos+raw.emprestimos_externos+raw.reestruturacao
+    +raw.financiamentos_internos+raw.parc_tributos+raw.parc_prev+raw.parc_demais_contrib;
+  var DCv=dividaContratual+raw.precatorios+raw.outras_dividas;
+  var rppSaldoAPagar=raw.rpp_inscrito+raw.rpnp_a_pagar;
+  var dispCaixa=raw.caixa_bruta-rppSaldoAPagar-raw.depositos_restituiveis;
+  var deducoes=dispCaixa+raw.demais_haveres;
+  var dcl=DCv-deducoes;
+  return {raw:raw, DC:DCv, rppSaldoAPagar:rppSaldoAPagar, dispCaixa:dispCaixa, deducoes:deducoes, dcl:dcl};
+}
+
+function computeAbaixoLinha(meses){
+  if(!DC) return null;
+  var maxSel=(meses&&meses.length)?meses.reduce(function(a,m){var n=Number(m);return n>a?n:a;},0):0;
+  var limitado=maxSel>DC.max_mes;
+  var maxMes=limitado?DC.max_mes:maxSel;
+  var snapA=snapshotDC(0), snapB=snapshotDC(maxMes);
+  return {a:snapA, b:snapB, xliii:snapA.dcl-snapB.dcl, mesB:maxMes, limitado:limitado};
 }
 
 // ─── COMPUTAR SNAPSHOT ──────────────────────────────────────────────────────
@@ -444,7 +510,8 @@ function computeSnap(meses){
 
 // ─── RENDER ─────────────────────────────────────────────────────────────────
 function refresh(){
-  var snap=computeSnap(getSelectedMeses());
+  var meses=getSelectedMeses();
+  var snap=computeSnap(meses);
   renderKPIs(snap);
   renderComparativo(snap);
   renderReceitas(snap);
@@ -452,19 +519,23 @@ function refresh(){
   renderResultado(snap);
   renderMeta();
   renderJuros(snap);
+  renderAbaixoLinha(computeAbaixoLinha(meses));
+}
+
+function updateKpiCard(id,v){
+  var card=document.getElementById('kpi-'+id);
+  card.classList.remove('surplus','deficit','neutral');
+  card.classList.add(v>0?'surplus':v<0?'deficit':'neutral');
+  document.getElementById('kv-'+id).textContent=fmtBi(v);
+  var badge=document.getElementById('kb-'+id);
+  if(v>0){badge.textContent='Superávit';badge.className='kpi-badge s';}
+  else if(v<0){badge.textContent='Déficit';badge.className='kpi-badge d';}
+  else{badge.textContent='—';badge.className='kpi-badge';}
 }
 
 function renderKPIs(snap){
   [['xxxiv','XXXIV'],['xxxv','XXXV'],['xxxviii','XXXVIII']].forEach(function(p){
-    var id=p[0],key=p[1],v=snap.res[key]||0;
-    var card=document.getElementById('kpi-'+id);
-    card.classList.remove('surplus','deficit','neutral');
-    card.classList.add(v>0?'surplus':v<0?'deficit':'neutral');
-    document.getElementById('kv-'+id).textContent=fmtBi(v);
-    var badge=document.getElementById('kb-'+id);
-    if(v>0){badge.textContent='Superávit';badge.className='kpi-badge s';}
-    else if(v<0){badge.textContent='Déficit';badge.className='kpi-badge d';}
-    else{badge.textContent='—';badge.className='kpi-badge';}
+    updateKpiCard(p[0],snap.res[p[1]]||0);
   });
 }
 
@@ -676,6 +747,52 @@ function renderJuros(snap){
   ].join('');
 }
 
+// ─── TABELA ABAIXO DA LINHA ──────────────────────────────────────────────────
+function renderAbaixoLinha(al){
+  var tbody=document.getElementById('tbl-abaixo');
+  var nota=document.getElementById('abaixo-nota');
+  if(!al){
+    tbody.innerHTML='<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:16px">'
+      +'Dados da D&#237;vida Consolidada indispon&#237;veis.</td></tr>';
+    if(nota) nota.textContent='';
+    document.getElementById('kpi-xliii').classList.remove('surplus','deficit');
+    document.getElementById('kpi-xliii').classList.add('neutral');
+    document.getElementById('kv-xliii').textContent='—';
+    document.getElementById('kb-xliii').textContent=' ';
+    document.getElementById('kb-xliii').className='kpi-badge';
+    return;
+  }
+  updateKpiCard('xliii',al.xliii);
+  function row(nome,va,vb,opts){
+    opts=opts||{};
+    var cls=opts.cls||'n2', ind=opts.ind?' '+opts.ind:'', dc=opts.ded?' ded':'';
+    return '<tr class="'+cls+dc+'"><td class="name'+ind+'">'+escHtml(nome)+'</td>'
+      +'<td class="num">'+(va==null?dash():fmtNum(va))+'</td>'
+      +'<td class="num">'+(vb==null?dash():fmtNum(vb))+'</td></tr>';
+  }
+  var a=al.a, b=al.b;
+  var frags=[
+    row('DÍVIDA CONSOLIDADA (XXXIX)',a.DC,b.DC,{cls:'n0'}),
+    row('DEDUÇÕES (XL)',a.deducoes,b.deducoes,{cls:'n0 ded'}),
+    row('Disponibilidade de Caixa',a.dispCaixa,b.dispCaixa,{cls:'n1',ind:'ind1'}),
+    row('Disponibilidade de Caixa Bruta',a.raw.caixa_bruta,b.raw.caixa_bruta,{cls:'n2',ind:'ind2'}),
+    row('(-) Restos a Pagar Processados (XLI)',a.rppSaldoAPagar,b.rppSaldoAPagar,{cls:'n2 ded',ind:'ind2'}),
+    row('(-) Depósitos Restituíveis e Valores Vinculados',a.raw.depositos_restituiveis,b.raw.depositos_restituiveis,{cls:'n2 ded',ind:'ind2'}),
+    row('Demais Haveres Financeiros',a.raw.demais_haveres,b.raw.demais_haveres,{cls:'n1',ind:'ind1'}),
+    row('DÍVIDA CONSOLIDADA LÍQUIDA (XLII) = (XXXIX - XL)',a.dcl,b.dcl,{cls:'n0'}),
+    '<tr class="sep"><td colspan="3"></td></tr>',
+    '<tr class="res '+(al.xliii>=0?'surplus':'deficit')+'"><td class="name">'
+      +'RESULTADO NOMINAL (SEM RPPS) - Abaixo da Linha (XLIII) = (XLIIa - XLIIb)</td>'
+      +'<td class="num" colspan="2">'+fmtNum(al.xliii)+'</td></tr>',
+  ];
+  tbody.innerHTML=frags.join('');
+  if(nota){
+    nota.textContent=al.limitado
+      ? 'Dívida Consolidada disponível até '+MESES_NOME[al.mesB]+'/'+DC.ano+' — usado na coluna (b) para os meses selecionados além desse limite.'
+      : '';
+  }
+}
+
 // ─── FETCH & INIT ────────────────────────────────────────────────────────────
 (function(){
   var img=document.getElementById('brasao');
@@ -693,9 +810,8 @@ function renderJuros(snap){
 
   var SUPA_URL='https://otrlwfdtdrqpynemoexj.supabase.co';
   var SUPA_KEY='sb_publishable_UKK5VWsrCXd1_zRR8tP16g_vySXJN5a';
-  function fetchSupabase(){
-    var ano=new Date().getFullYear();
-    return fetch(SUPA_URL+'/rest/v1/resultado_primario_nominal?select=dados,atualizado_em&ano=eq.'+ano,{
+  function fetchSupabase(tabela,ano){
+    return fetch(SUPA_URL+'/rest/v1/'+tabela+'?select=dados,atualizado_em&ano=eq.'+ano,{
       headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
     }).then(function(r){
       if(!r.ok) throw new Error('Supabase HTTP '+r.status);
@@ -719,9 +835,25 @@ function renderJuros(snap){
     setupMesSelect();
   }
 
-  fetchJsonGz('../data/gz/resultado_primario_nominal.json.gz?v='+new Date().toISOString().slice(0,10))
-    .catch(function(){return fetchSupabase();})
-    .then(init)
+  var ano=new Date().getFullYear();
+
+  var pPrincipal=fetchJsonGz('../data/gz/resultado_primario_nominal.json.gz?v='+new Date().toISOString().slice(0,10))
+    .catch(function(){return fetchSupabase('resultado_primario_nominal',ano);});
+
+  // Quadro Abaixo da Linha reaproveita o build da Dívida Consolidada — não é
+  // fatal se faltar: o dashboard segue funcionando sem esse quadro.
+  var pDC=fetchJsonGz('../data/gz/divida_consolidada.json.gz?v='+new Date().toISOString().slice(0,10))
+    .catch(function(){return fetchSupabase('divida_consolidada',ano);})
+    .catch(function(err){console.warn('Dívida Consolidada indisponível:',err.message); return null;});
+
+  pPrincipal
+    .then(function(json){
+      return Promise.all([json, pDC]);
+    })
+    .then(function(res){
+      DC=res[1];
+      init(res[0]);
+    })
     .catch(function(err){
       overlay.innerHTML='<div style="font-size:2rem">&#9888;&#65039;</div><div style="max-width:360px;text-align:center">Erro ao carregar dados: '+escHtml(err.message)+'</div>';
     });
