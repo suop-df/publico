@@ -533,7 +533,7 @@
                 <div class="card-sub" id="cardPrevisaoSub">Inicial: R$ 0,00 | Variação: 0,00%</div>
             </div>
             <div class="card">
-                <div class="card-label" id="cardRealizadoLabel">Realizado até</div>
+                <div class="card-label" id="cardRealizadoLabel">Realizado</div>
                 <div class="card-valor" id="cardRealizado">R$ 0,00</div>
                 <div class="card-sub" id="cardRealizadoSub">Ano anterior: R$ 0,00</div>
             </div>
@@ -1321,18 +1321,7 @@ function atualizarCards(filtradosRealizado, filtradosPrevisao, mesesSet) {
         .filter(r => r.coexercicio === ANO_ANTERIOR)
         .reduce((s, r) => s + r.saldo, 0);
 
-    const mesesArr = [...mesesSet].sort((a, b) => a - b);
-    let labelPeriodo;
-    if (mesesArr.length === 0) {
-        labelPeriodo = 'Realizado (nenhum mês selecionado)';
-    } else if (ehAcumuladoDesde1(mesesArr)) {
-        const ultimoMes = mesesArr[mesesArr.length - 1];
-        const bimRef = BIMESTRES[ultimoMes] || '';
-        labelPeriodo = `Realizado até ${NOMES_MES[ultimoMes]} (${bimRef})`;
-    } else {
-        labelPeriodo = 'Realizado em ' + mesesArr.map(m => NOMES_MES[m].substring(0, 3)).join(' + ');
-    }
-    document.getElementById('cardRealizadoLabel').textContent = labelPeriodo;
+    document.getElementById('cardRealizadoLabel').textContent = 'Realizado';
     document.getElementById('cardRealizado').textContent = fmtAbrev(realizadoAtual);
     const varReal = realizadoAnterior !== 0 ? ((realizadoAtual - realizadoAnterior) / Math.abs(realizadoAnterior) * 100) : 0;
     const tagR = varReal >= 0 ? 'tag-up' : 'tag-down';
