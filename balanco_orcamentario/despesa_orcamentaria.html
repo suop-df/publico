@@ -735,13 +735,14 @@ let REGISTROS = [];
 const ANO_ATUAL    = "2026";
 const ANO_ANTERIOR = "2025";
 
-// MAX_MES automático: último mês fechado do ANO_ATUAL.
-// Dados são D-1, então o mês corrente sempre está parcial — o último mês
-// fechado é sempre o anterior ao mês corrente (horário de Brasília).
+// MAX_MES automático: último mês com dado disponível no ANO_ATUAL.
+// Dados são D-1, então o mês corrente já tem alguns dias de dado (mesmo
+// que parcial) a partir do dia 2 — por isso o mês corrente entra na
+// lista, não só os meses fechados (horário de Brasília).
 // Se ANO_ATUAL já não é mais o ano corrente, todo o ano está fechado (12).
 const _hojeBrasilia = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
 const MAX_MES = (parseInt(ANO_ATUAL, 10) === _hojeBrasilia.getFullYear())
-    ? Math.max(1, _hojeBrasilia.getMonth())
+    ? _hojeBrasilia.getMonth() + 1
     : 12;
 
 const NOMES_MES = {
