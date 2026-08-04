@@ -734,9 +734,11 @@ function isIntra(r) {
     return cat.charAt(0) === '7' || cat.charAt(0) === '8';
 }
 
-// Função auxiliar: verifica se a conta contábil de receita realizada é FUNDEB (6213xxxxx)
+// Função auxiliar: verifica se a classificação orçamentária é dedução Fundeb
+// (SUBSTR(cocontacorrente,1,3) = 175 — já vem pronto em especie_receita,
+// que é SUBSTR(cocontacorrente,1,3) || '00000')
 function isFundeb(r) {
-    return String(r.cocontacontabil || '').substring(0, 4) === '6213';
+    return String(r.especie_receita || '').substring(0, 3) === '175';
 }
 
 // Função auxiliar: verifica categoria econômica (corrente ou capital)
@@ -781,7 +783,7 @@ function filtrarExcluindo(excluir) {
     const fundebSel = document.querySelector('input[name="rFundeb"]:checked').value;
 
     let f = REGISTROS.filter(r => mesesSet.has(r.inmes));
-    if (fundebSel === 'sem') f = f.filter(r => !isFundeb(r));
+    if (fundebSel === 'com') f = f.filter(r => !isFundeb(r));
     if (ugSel    && excluir !== 'ug')       f = f.filter(r => String(r.coug) === ugSel);
     if (fonteSel && excluir !== 'fonte')    f = f.filter(r => r.fonte_agrupada === fonteSel);
     if (intraSel === 'somente' && excluir !== 'intra') f = f.filter(r => isIntra(r));
@@ -1385,7 +1387,7 @@ function aplicarFiltros() {
 
     // 1. Filtrar registros (realizado)
     let filtrados = REGISTROS.filter(r => mesesSet.has(r.inmes));
-    if (fundebSel === 'sem') filtrados = filtrados.filter(r => !isFundeb(r));
+    if (fundebSel === 'com') filtrados = filtrados.filter(r => !isFundeb(r));
     if (ugSel)    filtrados = filtrados.filter(r => String(r.coug) === ugSel);
     if (fonteSel) filtrados = filtrados.filter(r => r.fonte_agrupada === fonteSel);
     if (intraSel === 'somente') filtrados = filtrados.filter(r => isIntra(r));
