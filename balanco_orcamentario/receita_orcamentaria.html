@@ -99,6 +99,23 @@
         .filtro-detalhar input[type="checkbox"] {
             accent-color: #006633;
         }
+        .mes-select {
+            width: 100%; font-family: inherit; font-size: 13px;
+            padding: 4px 6px; border-radius: 4px; border: 1px solid #ccc;
+            background: #fff; color: #333; cursor: pointer;
+        }
+        .mes-select:focus {
+            border-color: #006633; outline: none;
+            box-shadow: 0 0 0 2px rgba(0,102,51,0.15);
+        }
+        .sel-hint { font-size: 11px; color: #888; margin-top: 4px; }
+        .sel-btn-all {
+            font-family: inherit; font-size: 11px; font-weight: 600;
+            padding: 4px 8px; margin-top: 6px; border-radius: 4px;
+            border: 1px solid #ccc; background: #f8f9fa; color: #006633;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .sel-btn-all:hover { border-color: #006633; background: #e8f5e9; }
 
         /* CONTEÚDO (tabela) */
         .conteudo {
@@ -435,9 +452,21 @@
         <h3>Filtros</h3>
 
         <div class="filtro-item">
-            <label for="fMes">Mês (acumulado até)</label>
-            <select id="fMes"></select>
+            <label>Receita Realizada</label>
+            <div class="filtro-intra">
+                <label><input type="radio" name="rFundeb" value="sem" checked> Sem dedução Fundeb</label>
+                <label><input type="radio" name="rFundeb" value="com"> Com dedução Fundeb</label>
+            </div>
         </div>
+
+        <div class="filtro-item">
+            <label for="fMes">Mês</label>
+            <select class="mes-select" id="fMes" multiple></select>
+            <div class="sel-hint">Ctrl+clique para múltipla seleção</div>
+            <button type="button" class="sel-btn-all" onclick="selecionarTodosMeses(); aplicarFiltros();">Selecionar todos</button>
+        </div>
+
+        <hr class="filtro-separator">
 
         <div class="filtro-item">
             <label for="fUG">UG</label>
@@ -667,7 +696,8 @@ const NOMES_MES = {
 
 // ============ POPULAR DROPDOWNS ============
 
-// Meses — fixo (não depende dos outros filtros)
+// Meses — listbox de seleção múltipla, todos marcados por padrão
+// (mesmo padrão do resultado_primario_nominal/index.html)
 (function() {
     const sel = document.getElementById('fMes');
     for (let m = 1; m <= MAX_MES; m++) {
@@ -676,13 +706,36 @@ const NOMES_MES = {
         opt.textContent = m + ' - ' + NOMES_MES[m];
         sel.appendChild(opt);
     }
-    sel.value = MAX_MES;
+    sel.size = Math.min(MAX_MES, 6);
+    selecionarTodosMeses();
 })();
+
+function selecionarTodosMeses() {
+    const sel = document.getElementById('fMes');
+    for (let i = 0; i < sel.options.length; i++) sel.options[i].selected = true;
+}
+
+// Retorna o conjunto de meses (inmes) marcados no listbox
+function mesesSelecionadosSet() {
+    const marcados = [...document.getElementById('fMes').selectedOptions].map(o => parseInt(o.value));
+    return new Set(marcados);
+}
+
+// Detecta se a seleção equivale ao "acumulado desde janeiro" (1..N sem
+// lacunas) — usado só para escolher o texto exibido, não muda o cálculo
+function ehAcumuladoDesde1(mesesArr) {
+    return mesesArr.length > 0 && mesesArr.every((m, i) => m === i + 1);
+}
 
 // Função auxiliar: verifica se receita é intraorçamentária (começa com 7 ou 8)
 function isIntra(r) {
     const cat = r.categoria_economica || '';
     return cat.charAt(0) === '7' || cat.charAt(0) === '8';
+}
+
+// Função auxiliar: verifica se a conta contábil de receita realizada é FUNDEB (6213xxxxx)
+function isFundeb(r) {
+    return String(r.cocontacontabil || '').substring(0, 4) === '6213';
 }
 
 // Função auxiliar: verifica categoria econômica (corrente ou capital)
@@ -718,14 +771,16 @@ function repopularSelect(selId, itens, valorAnterior) {
 // Lê os filtros atuais e retorna registros filtrados EXCLUINDO um filtro específico
 // Permite que cada dropdown mostre as opções compatíveis com os DEMAIS filtros
 function filtrarExcluindo(excluir) {
-    const mesSel   = parseInt(document.getElementById('fMes').value);
+    const mesesSet = mesesSelecionadosSet();
     const ugSel    = document.getElementById('fUG').value;
     const fonteSel = document.getElementById('fFonte').value;
     const intraSel = document.querySelector('input[name="rIntra"]:checked').value;
     const catEconSel = document.querySelector('input[name="rCatEcon"]:checked').value;
     const espSel   = document.getElementById('fEspecie').value;
+    const fundebSel = document.querySelector('input[name="rFundeb"]:checked').value;
 
-    let f = REGISTROS.filter(r => r.inmes <= mesSel);
+    let f = REGISTROS.filter(r => mesesSet.has(r.inmes));
+    if (fundebSel === 'sem') f = f.filter(r => !isFundeb(r));
     if (ugSel    && excluir !== 'ug')       f = f.filter(r => String(r.coug) === ugSel);
     if (fonteSel && excluir !== 'fonte')    f = f.filter(r => r.fonte_agrupada === fonteSel);
     if (intraSel === 'somente' && excluir !== 'intra') f = f.filter(r => isIntra(r));
@@ -1051,9 +1106,14 @@ function desenharBulletChart(filtradosRealizado, filtPrevFull) {
     }
 
     // ── Separador antes do YTD ──
+    const mesesArrChart = [...mesesSelecionadosSet()].sort((a, b) => a - b);
+    const acumuladoChart = ehAcumuladoDesde1(mesesArrChart);
+    const rotuloYTD = acumuladoChart
+        ? `ACUMULADO ATÉ ${MESES[ultimoMes].toUpperCase()}`
+        : 'SOMA DOS MESES SELECIONADOS';
     const sepY = padT + 12 * rowStep + 6;
     s += `<line x1="${padL-8}" y1="${sepY}" x2="${W-8}" y2="${sepY}" stroke="#cbd5e1" stroke-width="2"/>`;
-    s += `<text x="${padL-8}" y="${sepY+12}" font-size="10.5" font-weight="700" fill="#94a3b8" letter-spacing="0.5">ACUMULADO ATÉ ${MESES[ultimoMes].toUpperCase()}</text>`;
+    s += `<text x="${padL-8}" y="${sepY+12}" font-size="10.5" font-weight="700" fill="#94a3b8" letter-spacing="0.5">${rotuloYTD}</text>`;
 
     // ── Linha YTD ──
     const ytdH = rowH + 6;
@@ -1094,7 +1154,8 @@ function desenharBulletChart(filtradosRealizado, filtPrevFull) {
     const adiantado = ytdPct >= 1.0;
     const badge = document.getElementById('metaBadge');
     if (badge) {
-        badge.textContent = `${MESES[ultimoMes]}/${ANO_ATUAL}: ${pctAnual.toFixed(1).replace('.',',')}% da meta anual${adiantado?' ✓':' ▼'}`;
+        const refBadge = acumuladoChart ? `${MESES[ultimoMes]}/${ANO_ATUAL}` : 'Meses selecionados';
+        badge.textContent = `${refBadge}: ${pctAnual.toFixed(1).replace('.',',')}% da meta anual${adiantado?' ✓':' ▼'}`;
         badge.className = 'meta-badge-svg ' + (adiantado ? 'adiantado' : 'atras');
     }
 }
@@ -1234,7 +1295,7 @@ function _antigo_desenharCorridaMeta_unused(filtradosRealizado, filtPrevFull) {
 }
 
 // ============ ATUALIZAR CARDS ============
-function atualizarCards(filtradosRealizado, filtradosPrevisao, mesSel) {
+function atualizarCards(filtradosRealizado, filtradosPrevisao, mesesSet) {
     // Previsão Atualizada (soma de todos os registros previsão do ano atual, filtrados)
     const prevAtualizada = filtradosPrevisao
         .filter(r => r.coexercicio === ANO_ATUAL)
@@ -1260,8 +1321,18 @@ function atualizarCards(filtradosRealizado, filtradosPrevisao, mesSel) {
         .filter(r => r.coexercicio === ANO_ANTERIOR)
         .reduce((s, r) => s + r.saldo, 0);
 
-    const bimRef = BIMESTRES[mesSel] || '';
-    document.getElementById('cardRealizadoLabel').textContent = `Realizado até ${NOMES_MES[mesSel]} (${bimRef})`;
+    const mesesArr = [...mesesSet].sort((a, b) => a - b);
+    let labelPeriodo;
+    if (mesesArr.length === 0) {
+        labelPeriodo = 'Realizado (nenhum mês selecionado)';
+    } else if (ehAcumuladoDesde1(mesesArr)) {
+        const ultimoMes = mesesArr[mesesArr.length - 1];
+        const bimRef = BIMESTRES[ultimoMes] || '';
+        labelPeriodo = `Realizado até ${NOMES_MES[ultimoMes]} (${bimRef})`;
+    } else {
+        labelPeriodo = 'Realizado em ' + mesesArr.map(m => NOMES_MES[m].substring(0, 3)).join(' + ');
+    }
+    document.getElementById('cardRealizadoLabel').textContent = labelPeriodo;
     document.getElementById('cardRealizado').textContent = fmtAbrev(realizadoAtual);
     const varReal = realizadoAnterior !== 0 ? ((realizadoAtual - realizadoAnterior) / Math.abs(realizadoAnterior) * 100) : 0;
     const tagR = varReal >= 0 ? 'tag-up' : 'tag-down';
@@ -1313,16 +1384,18 @@ function aplicarFiltros() {
     // Atualizar dropdowns dinamicamente antes de filtrar
     atualizarDropdowns();
 
-    const mesSel   = parseInt(document.getElementById('fMes').value);
+    const mesesSet = mesesSelecionadosSet();
     const ugSel    = document.getElementById('fUG').value;
     const fonteSel = document.getElementById('fFonte').value;
     const intraSel = document.querySelector('input[name="rIntra"]:checked').value;
     const catEconSel = document.querySelector('input[name="rCatEcon"]:checked').value;
     const espSel   = document.getElementById('fEspecie').value;
+    const fundebSel = document.querySelector('input[name="rFundeb"]:checked').value;
     const mostrarTipo    = document.getElementById('chkTipo').checked;
 
     // 1. Filtrar registros (realizado)
-    let filtrados = REGISTROS.filter(r => r.inmes <= mesSel);
+    let filtrados = REGISTROS.filter(r => mesesSet.has(r.inmes));
+    if (fundebSel === 'sem') filtrados = filtrados.filter(r => !isFundeb(r));
     if (ugSel)    filtrados = filtrados.filter(r => String(r.coug) === ugSel);
     if (fonteSel) filtrados = filtrados.filter(r => r.fonte_agrupada === fonteSel);
     if (intraSel === 'somente') filtrados = filtrados.filter(r => isIntra(r));
@@ -1330,8 +1403,9 @@ function aplicarFiltros() {
     if (catEconSel) filtrados = filtrados.filter(r => isCatEcon(r, catEconSel));
     if (espSel)   filtrados = filtrados.filter(r => r.especie_receita === espSel);
 
-    // 1b. Filtrar previsão (mesmos filtros, limitado ao mês selecionado)
-    let filtPrev = PREVISAO.filter(r => r.inmes <= mesSel);
+    // 1b. Filtrar previsão (mesmos filtros, limitado aos meses selecionados —
+    // Previsão não tem distinção FUNDEB/sem FUNDEB, então fundebSel não se aplica aqui)
+    let filtPrev = PREVISAO.filter(r => mesesSet.has(r.inmes));
     if (ugSel)    filtPrev = filtPrev.filter(r => String(r.coug) === ugSel);
     if (fonteSel) filtPrev = filtPrev.filter(r => r.fonte_agrupada === fonteSel);
     if (intraSel === 'somente') filtPrev = filtPrev.filter(r => isIntra(r));
@@ -1427,7 +1501,7 @@ function aplicarFiltros() {
     const tbody = document.getElementById('tabelaBody');
     if (linhas.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#999;">Sem dados para os filtros selecionados</td></tr>';
-        atualizarCards(filtrados, filtPrev, mesSel);
+        atualizarCards(filtrados, filtPrev, mesesSet);
         atualizarGraficos(filtrados);
         return;
     }
@@ -1483,7 +1557,7 @@ function aplicarFiltros() {
     tbody.innerHTML = html;
 
     // 5. Atualizar cards e gráficos
-    atualizarCards(filtrados, filtPrev, mesSel);
+    atualizarCards(filtrados, filtPrev, mesesSet);
     atualizarGraficos(filtrados, filtPrevFull);
 }
 
@@ -1498,36 +1572,49 @@ document.querySelectorAll('input[name="rIntra"]').forEach(r => {
 document.querySelectorAll('input[name="rCatEcon"]').forEach(r => {
     r.addEventListener('change', aplicarFiltros);
 });
+document.querySelectorAll('input[name="rFundeb"]').forEach(r => {
+    r.addEventListener('change', aplicarFiltros);
+});
 
 // ============ LIMPAR FILTROS ============
 function limparFiltros() {
-    document.getElementById('fMes').value = MAX_MES;
+    selecionarTodosMeses();
     document.getElementById('fUG').value = '';
     document.getElementById('fFonte').value = '';
     document.getElementById('fEspecie').value = '';
     document.getElementById('chkTipo').checked = false;
     document.querySelector('input[name="rIntra"][value=""]').checked = true;
     document.querySelector('input[name="rCatEcon"][value=""]').checked = true;
+    document.querySelector('input[name="rFundeb"][value="sem"]').checked = true;
     aplicarFiltros();
 }
 
 // ============ GERAR PDF ============
 function gerarPDF() {
     // Montar resumo dos filtros ativos para aparecer no PDF
-    const mesSel   = document.getElementById('fMes');
     const ugSel    = document.getElementById('fUG');
     const fonteSel = document.getElementById('fFonte');
     const espSel   = document.getElementById('fEspecie');
     const chkTipo  = document.getElementById('chkTipo').checked;
     const intraVal = document.querySelector('input[name="rIntra"]:checked').value;
     const catEconVal = document.querySelector('input[name="rCatEcon"]:checked').value;
+    const fundebVal = document.querySelector('input[name="rFundeb"]:checked').value;
 
-    const mesTexto   = mesSel.options[mesSel.selectedIndex].textContent;
+    const mesesArr = [...mesesSelecionadosSet()].sort((a, b) => a - b);
+    let mesTexto;
+    if (mesesArr.length === 0) {
+        mesTexto = 'Nenhum mês selecionado';
+    } else if (ehAcumuladoDesde1(mesesArr)) {
+        mesTexto = 'Acumulado até ' + NOMES_MES[mesesArr[mesesArr.length - 1]];
+    } else {
+        mesTexto = mesesArr.map(m => NOMES_MES[m]).join(' + ');
+    }
     const ugTexto    = ugSel.value ? ugSel.options[ugSel.selectedIndex].textContent : 'Todas';
     const fonteTexto = fonteSel.value ? fonteSel.options[fonteSel.selectedIndex].textContent : 'Todas';
     const espTexto   = espSel.value ? espSel.options[espSel.selectedIndex].textContent : 'Todas';
     const intraTexto = intraVal === 'somente' ? 'Somente Intra' : intraVal === 'excluir' ? 'Excluir Intra' : 'Todas';
     const catEconTexto = catEconVal === 'corrente' ? 'Corrente' : catEconVal === 'capital' ? 'Capital' : 'Todas';
+    const fundebTexto = fundebVal === 'sem' ? 'Sem dedução Fundeb' : 'Com dedução Fundeb';
     const detTexto = chkTipo ? 'Tipo' : 'Não';
 
     const resumo = document.getElementById('printResumo');
@@ -1538,6 +1625,7 @@ function gerarPDF() {
         + `Intra: <strong>${intraTexto}</strong> | `
         + `Cat. Econômica: <strong>${catEconTexto}</strong> | `
         + `Espécie: <strong>${espTexto}</strong> | `
+        + `Receita Realizada: <strong>${fundebTexto}</strong> | `
         + `Detalhamento: <strong>${detTexto}</strong> | `
         + `Comparação: <strong>${ANO_ATUAL} vs ${ANO_ANTERIOR}</strong>`;
 

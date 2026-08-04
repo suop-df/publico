@@ -79,6 +79,23 @@
             letter-spacing: 0 !important;
         }
         .filtro-intra input[type="radio"] { accent-color: #006633; }
+        .mes-select {
+            width: 100%; font-family: inherit; font-size: 13px;
+            padding: 4px 6px; border-radius: 4px; border: 1px solid #ccc;
+            background: #fff; color: #333; cursor: pointer;
+        }
+        .mes-select:focus {
+            border-color: #006633; outline: none;
+            box-shadow: 0 0 0 2px rgba(0,102,51,0.15);
+        }
+        .sel-hint { font-size: 11px; color: #888; margin-top: 4px; }
+        .sel-btn-all {
+            font-family: inherit; font-size: 11px; font-weight: 600;
+            padding: 4px 8px; margin-top: 6px; border-radius: 4px;
+            border: 1px solid #ccc; background: #f8f9fa; color: #006633;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .sel-btn-all:hover { border-color: #006633; background: #e8f5e9; }
 
         /* CONTEÚDO */
         .conteudo { flex: 1; min-width: 0; }
@@ -445,8 +462,10 @@
         <h3>Filtros</h3>
 
         <div class="filtro-item">
-            <label for="fMes">Mês (acumulado até)</label>
-            <select id="fMes"></select>
+            <label for="fMes">Mês</label>
+            <select class="mes-select" id="fMes" multiple></select>
+            <div class="sel-hint">Ctrl+clique para múltipla seleção</div>
+            <button type="button" class="sel-btn-all" onclick="selecionarTodosMeses(); aplicarFiltros();">Selecionar todos</button>
         </div>
 
         <div class="filtro-item">
@@ -731,7 +750,8 @@ const NOMES_MES = {
     9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'
 };
 
-// Mês — fixo (não depende dos outros filtros)
+// Mês — listbox de seleção múltipla, todos marcados por padrão
+// (mesmo padrão do resultado_primario_nominal/index.html)
 (function() {
     const sel = document.getElementById('fMes');
     for (let m = 1; m <= MAX_MES; m++) {
@@ -740,8 +760,26 @@ const NOMES_MES = {
         opt.textContent = m + ' - ' + NOMES_MES[m];
         sel.appendChild(opt);
     }
-    sel.value = MAX_MES;
+    sel.size = Math.min(MAX_MES, 6);
+    selecionarTodosMeses();
 })();
+
+function selecionarTodosMeses() {
+    const sel = document.getElementById('fMes');
+    for (let i = 0; i < sel.options.length; i++) sel.options[i].selected = true;
+}
+
+// Retorna o conjunto de meses (inmes) marcados no listbox
+function mesesSelecionadosSet() {
+    const marcados = [...document.getElementById('fMes').selectedOptions].map(o => parseInt(o.value));
+    return new Set(marcados);
+}
+
+// Detecta se a seleção equivale ao "acumulado desde janeiro" (1..N sem
+// lacunas) — usado só para escolher o texto exibido, não muda o cálculo
+function ehAcumuladoDesde1(mesesArr) {
+    return mesesArr.length > 0 && mesesArr.every((m, i) => m === i + 1);
+}
 
 
 // Despesas ignoradas (global)
@@ -772,7 +810,7 @@ function repopularSelect(selId, itens, valorAnterior) {
 // Lê os filtros atuais e retorna os registros filtrados EXCLUINDO o filtro 'excluir'
 // Isso permite que cada dropdown mostre as opções compatíveis com os DEMAIS filtros
 function filtrarExcluindo(excluir) {
-    const mesSel   = parseInt(document.getElementById('fMes').value);
+    const mesesSet = mesesSelecionadosSet();
     const ugSel    = document.getElementById('fUG').value;
     const fonteSel = document.getElementById('fFonte').value;
     const supSel   = document.getElementById('chkSuperavit').checked;
@@ -783,7 +821,7 @@ function filtrarExcluindo(excluir) {
     const funcSel  = document.getElementById('fFuncao').value;
     const subfSel  = document.getElementById('fSubfuncao').value;
 
-    let f = REGISTROS.filter(r => r.inmes <= mesSel && !DESPESAS_IGNORAR_GLOBAL.includes(r.despesa));
+    let f = REGISTROS.filter(r => mesesSet.has(r.inmes) && !DESPESAS_IGNORAR_GLOBAL.includes(r.despesa));
     if (ugSel    && excluir !== 'ug')       f = f.filter(r => r.coug === ugSel);
     if (supSel   && excluir !== 'superavit') f = f.filter(r => isFonteSuperavit(r));
     if (fonteSel && excluir !== 'fonte')    f = f.filter(r => r.fonte_agrupada === fonteSel);
@@ -1379,7 +1417,7 @@ function aplicarFiltros() {
     // Atualizar dropdowns dinamicamente antes de filtrar
     atualizarDropdowns();
 
-    const mesSel   = parseInt(document.getElementById('fMes').value);
+    const mesesSet = mesesSelecionadosSet();
     const ugSel    = document.getElementById('fUG').value;
     const fonteSel = document.getElementById('fFonte').value;
     const supSel   = document.getElementById('chkSuperavit').checked;
@@ -1391,7 +1429,7 @@ function aplicarFiltros() {
     const subfSel  = document.getElementById('fSubfuncao').value;
 
     // Filtrar
-    let filtrados = REGISTROS.filter(r => r.inmes <= mesSel && !DESPESAS_IGNORAR_GLOBAL.includes(r.despesa));
+    let filtrados = REGISTROS.filter(r => mesesSet.has(r.inmes) && !DESPESAS_IGNORAR_GLOBAL.includes(r.despesa));
     if (ugSel)    filtrados = filtrados.filter(r => r.coug === ugSel);
     if (supSel)   filtrados = filtrados.filter(r => isFonteSuperavit(r));
     if (fonteSel) filtrados = filtrados.filter(r => r.fonte_agrupada === fonteSel);
@@ -1604,7 +1642,7 @@ document.getElementById('chkSuperavit').addEventListener('change', aplicarFiltro
 
 // ============ LIMPAR FILTROS ============
 function limparFiltros() {
-    document.getElementById('fMes').value = MAX_MES;
+    selecionarTodosMeses();
     document.getElementById('fUG').value = '';
     document.getElementById('fFonte').value = '';
     document.getElementById('fGND').value = '';
@@ -1621,14 +1659,21 @@ function limparFiltros() {
 
 // ============ GERAR PDF ============
 function gerarPDF() {
-    const mesSel   = document.getElementById('fMes');
     const ugSel    = document.getElementById('fUG');
     const fonteSel = document.getElementById('fFonte');
     const intraVal = document.querySelector('input[name="rIntra"]:checked').value;
     const catEconVal = document.querySelector('input[name="rCatEcon"]:checked').value;
     const supVal   = document.getElementById('chkSuperavit').checked;
 
-    const mesTexto   = mesSel.options[mesSel.selectedIndex].textContent;
+    const mesesArr = [...mesesSelecionadosSet()].sort((a, b) => a - b);
+    let mesTexto;
+    if (mesesArr.length === 0) {
+        mesTexto = 'Nenhum mês selecionado';
+    } else if (ehAcumuladoDesde1(mesesArr)) {
+        mesTexto = 'Acumulado até ' + NOMES_MES[mesesArr[mesesArr.length - 1]];
+    } else {
+        mesTexto = mesesArr.map(m => NOMES_MES[m]).join(' + ');
+    }
     const ugTexto    = ugSel.value ? ugSel.options[ugSel.selectedIndex].textContent : 'Todas';
     const fonteTexto = fonteSel.value ? fonteSel.options[fonteSel.selectedIndex].textContent : 'Todas';
     const gndEl      = document.getElementById('fGND');
