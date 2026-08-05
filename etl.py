@@ -2064,9 +2064,13 @@ _DC_CONTAS = {
 # SUM(vacredito-vadebito) para (221210202,113510802) bate com o demonstrativo.
 _DC_PRECATORIOS_SEMPRE_CREDORA = {221210202, 113510802}
 
+# 121310300 ("Aplicações em Segmento de Imóveis") entrou em 2026-08-04: conta
+# nova, zerada até INMES 4 e com 1º movimento em maio/2026 (INMES 5). Por isso
+# o 2º bimestre batia com o oficial e o 3º não — faltavam R$ 14.436.271,80.
 _DC_DEMAIS_HAVERES_CONTAS = {
     112410201, 112410302, 112410303, 112410304, 112910301,
     121110301, 121110302, 121110321, 121110322, 121310102,
+    121310300,
 }
 
 # Restos a Pagar — RPP Inscrito acumula todo o exercício (sem trava de

@@ -64,8 +64,10 @@ WHERE s.inmes BETWEEN 0 AND 12
         -- Outras Dívidas
         218910105, 218910108,
         -- Deduções (II) — Demais Haveres Financeiros ----------------------
+        -- 121310300 incluída em 04/08/2026 (conta nova, 1º movimento em maio)
         112410201, 112410302, 112410303, 112410304, 112910301,
         121110301, 121110302, 121110321, 121110322, 121310102,
+        121310300,
         -- Deduções (II) — Restos a Pagar Processados (saldo a pagar) ------
         -- RPP Inscrito
         632110100, 632110300,
