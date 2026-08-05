@@ -102,25 +102,37 @@ Arquivo: `.github/workflows/etl.yml`
 
 ```yaml
 on:
-  schedule:
-    - cron: "0 9 * * *"   # 09:00 UTC = 06:00 Brasília
-  workflow_dispatch:        # disparo manual pela interface do GitHub
+  workflow_dispatch:   # ÚNICO gatilho — não há schedule/cron
 ```
+
+> **Não existe `schedule:` no workflow.** O cron do GitHub Actions roda em
+> regime de melhor esforço: atrasa em horários de pico e às vezes é
+> descartado — na prática o ETL agendado para 06h disparava em horários
+> aleatórios. Por isso o `schedule:` foi removido e quem dispara na hora
+> certa é a tarefa `DisparadorETL` da estação, via API (ver abaixo).
+> Disparo externo por `workflow_dispatch` é a solução padrão para essa
+> limitação.
 
 - `runs-on: self-hosted` — obrigatório, por causa do acesso ao Oracle interno.
 - O workflow faz checkout, instala dependências, roda `py etl.py`, e commita os gz gerados de volta ao repositório.
 - O passo de commit usa `git diff --staged --quiet` para só fazer push se houver alterações.
 - **Atenção:** o arquivo `.yml` deve conter texto puro — nunca links Markdown. O GitHub Pages falha silenciosamente se o YAML tiver sintaxe inválida (sem exibir erro no Actions).
 
-### Disparo alternativo via API (agendador Windows)
+### Disparo via API (agendador Windows) — mecanismo ÚNICO, não alternativo
 
-Para não depender da instabilidade do cron do GitHub Actions (free tier), foi criado um script PowerShell que dispara o workflow via API:
+Como o `schedule:` foi removido (ver acima), este é o **único** jeito de o ETL
+rodar no horário. Se esta tarefa não rodar, o ETL do GitHub simplesmente não
+acontece — silenciosamente.
+
+O script real (`E:\Actions-runner\disparar-etl.ps1`) dispara **dois**
+repositórios da org: `publico` e `unad`. Esqueleto (o PAT real está no arquivo,
+em texto puro — não replicar aqui):
 
 ```powershell
 # E:\Actions-runner\disparar-etl.ps1
-$token    = "SEU_PAT_AQUI"
+$token    = "<PAT — escopos repo + workflow>"
 $owner    = "suop-df"
-$repo     = "dashboard"
+$repo     = "publico"          # o script repete o bloco para "unad"
 $workflow = "etl.yml"
 $branch   = "main"
 
@@ -140,6 +152,18 @@ $settings  = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Min
 $principal = New-ScheduledTaskPrincipal -UserId "james.coelho" -LogonType Interactive -RunLevel Highest
 Register-ScheduledTask -TaskName "DisparadorETL" -Action $action -Trigger $trigger -Settings $settings -Principal $principal
 ```
+
+> ⚠️ **Fragilidade conhecida (verificada 04/08/2026):** `DisparadorETL` e
+> `GitHubActionsRunner` rodam com `LogonType Interactive` — só funcionam **com
+> o James logado na estação**. Se a máquina desligar, reiniciar por Windows
+> Update ou deslogar (férias, p.ex.), o ETL do `publico` **para
+> silenciosamente**: a VM continua atualizando (roda como `SYSTEM`), então
+> ninguém percebe que o GitHub congelou.
+>
+> É também o motivo da regra "AtLogOn, NÃO AtStartup" do runner: `AtStartup`
+> dispara antes de qualquer login, e `Interactive` exige sessão — combinação
+> impossível. Trocar o principal para `SYSTEM` resolve as duas coisas de uma
+> vez. Ver `docs/plano_colaborador_e_ausencia.md`, item 8.
 
 ---
 
