@@ -153,7 +153,7 @@ def resolve_query(item):
 
 # RCL Aggregation
 # Regras: tools/regra_rcl.txt (ContDF/SEEC)
-# FCDF: data/UFIS-FCDFDespesadePessoal.xlsx (UFIS/SIAFE)
+# FCDF: data/fcdf.xlsx (UFIS/SIAFE) -- renomeado de UFIS-FCDFDespesadePessoal.xlsx
 
 FCDF_CLASS6_CONTAS = {622130300, 622130400, 622130500, 622130600, 622130700}
 
@@ -243,7 +243,7 @@ def load_fcdf_data(base_dir):
     if FCDF_PATH:
         path = Path(FCDF_PATH)
     else:
-        path = base_dir / "data" / "UFIS-FCDFDespesadePessoal.xlsx"
+        path = base_dir / "data" / "fcdf.xlsx"
     if not path.exists():
         log.warning(f"Planilha FCDF nao encontrada: {path}")
         return {"realizados": {}}

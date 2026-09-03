@@ -7,11 +7,8 @@ MÊS/ANO: (COCONTACONTABIL BETWEEN 621200000 AND 621399999) AND (COCONTACONTABIL
 REGRA DA COLUNAS - linha Recursos do Fundo Constitucional do DF Não Destinados ao Pagam. de Pessoal (no SIAFI) (III)
 ====================================================================================================================
 
-Fonte: UFIS-FCDFDespesadePessoal.xlsx
+Fonte: fcdf.xlsx (renomeado de UFIS-FCDFDespesadePessoal.xlsx)
 MÊS/ANO: "Conta Contábil" IN (622130300,622130400,622130500,622130600,622130700), SUM("Vacredito FC"-"Vadebito FC")
-
-622130300;622130400;622130700;622130500;622130600
-622130300;622130400;622130700;622130500;622130600
 
 REGRA DAS LINHAS:
 ================

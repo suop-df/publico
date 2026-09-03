@@ -11,7 +11,7 @@ data/resultado_primario_nominal.json
 data/saldo_funcao_subfuncao.json
 
 # Planilha FCDF — dado local, não versionar
-data/UFIS-FCDFDespesadePessoal.xlsx
+data/fcdf.xlsx
 
 # Projeção Fiscal — análise offline, não publicar no repo público
 projecao_fiscal/
@@ -21,3 +21,15 @@ data/queries/projecao_fiscal.sql
 docs/metodologia_projecao_fiscal.md
 tools/regra_projecao_fiscal.txt
 tools/gerar_metodologia_docx.py
+
+# Projeção de Impostos (2026 07-12) — regra/metodologia/query ainda na raiz
+docs/metodologia_impostos_projecao.md
+tools/regra_imposto_projecao.txt
+data/queries/projecao_fiscal_imposto.sql
+
+# Ferramenta Interativa (Streamlit) — reorganizada 16/07/2026, 5ª rodada:
+# interno/ deixou de morar dentro deste repo (era gitignored aqui) e virou
+# repositório git próprio em E:\Projetos\interno, com deploy separado pra
+# VM (bare repo dedicado). O espelho do plano de implementação continua
+# aqui em docs/, gitignored (GitHub ainda ativo).
+docs/plano_projecao_interativa.md
