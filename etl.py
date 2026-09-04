@@ -711,7 +711,7 @@ def build_poupanca_corrente_data(rows):
     rec      = {}   # rec[ano][mes]      receita corrente realizada
     desp_liq = {}   # desp_liq[ano][mes] despesas liquidadas correntes
     rpnp_can = {}   # rpnp_can[ano][mes] RPNP cancelado no exercício
-    rpnp_ins = {}   # rpnp_ins[ano]      RPNP inscrito no encerramento (inmes=0)
+    rpnp_ins = {}   # rpnp_ins[ano]      RPNP inscrito em dezembro (inmes=12, regra alterada 03/09/2026)
 
     for r in rows:
         cc   = str(r.get("cocontacontabil") or "").strip()
@@ -736,9 +736,9 @@ def build_poupanca_corrente_data(rows):
                 and nat2 in ('1', '2', '3')
                 and 1 <= mes <= 12):
             desp_liq.setdefault(ano, _ano())[mes] += val
-        elif (cc_int in (631100000, 631200000)
+        elif (cc_int in (622130500, 622130600)
                 and nat2 in ('1', '2', '3')
-                and mes == 0):
+                and mes == 12):
             rpnp_ins[ano] = rpnp_ins.get(ano, 0.0) + val
         elif (cc_int == 631900000
                 and nat2 in ('1', '2', '3', '7')
@@ -747,6 +747,15 @@ def build_poupanca_corrente_data(rows):
 
     def g(d, ano, mes):
         return d.get(ano, {}).get(mes, 0.0)
+
+    def rpnp_inscrito_ate(ano_ref):
+        """RPNP Inscrito do último dezembro já fechado até `ano_ref`
+        (decisão do usuário, 03/09/2026): dezembro do exercício corrente só
+        fica disponível (INMES=12) em janeiro do ano seguinte -- até lá, usa
+        o valor do último exercício que já tiver INMES=12 lançado, em vez de
+        zerar o ano inteiro."""
+        candidatos = [a for a in rpnp_ins if a <= ano_ref]
+        return rpnp_ins[max(candidatos)] if candidatos else 0.0
 
     # Mês de referência = último (ano, mês) com receita corrente movimentada.
     ref = None
@@ -776,7 +785,7 @@ def build_poupanca_corrente_data(rows):
                   + sum(g(rec, y, k)          for k in range(1, m + 1)))
         desp_12m = (sum(g(desp_liq, y - 1, k) for k in range(m + 1, 13))
                   + sum(g(desp_liq, y, k)     for k in range(1, m + 1)))
-        rpnp_i   = rpnp_ins.get(y, 0.0)                          # inscrito no encerramento do exerc. corrente
+        rpnp_i   = rpnp_inscrito_ate(y)                          # último dezembro fechado até o exerc. corrente
         rpnp_c   = sum(g(rpnp_can, y, k) for k in range(1, m + 1))  # cancelado no exerc. corrente
         desp_cor = desp_12m + rpnp_i - rpnp_c
         pct      = round(desp_cor / rec_12m * 100, 2) if rec_12m else None

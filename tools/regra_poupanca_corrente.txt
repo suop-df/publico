@@ -3,8 +3,22 @@ RECEITA CORRENTE: (COCONTACONTABIL ENTRE 621200000 AND 621390199) AND GND IN (1,
 DESPESA CORRENTE: [DESPESAS LIQUIDADAS]+[RPNP Inscrito]-[RPNP Cancelado]
 
 DESPESAS LIQUIDADAS: COCONTACONTABIL IN (622130400,622130300) AND GND IN (1,2,3),  SUM(VACREDITO-VADEBITO)
-RPNP Inscrito: COCONTACONTABIL IN (631100000,631200000) AND GND IN (1,2,3) AND INMES=0 AND COEXERCICIO = ANO_CORRENTE; SUM(VACREDITO-VADEBITO) 
-RPNP Cancelado: COCONTACONTABIL IN (631900000) AND GND IN (1,2,3,7) AND INMES BETWEEN ENTRE 1 AND 12 AND COEXERCICIO = ANO_CORRENTE; SUM(VACREDITO-VADEBITO) 
+RPNP Inscrito: COCONTACONTABIL IN (622130500,622130600) AND GND IN (1,2,3) AND INMES=12 AND COEXERCICIO = ANO_CORRENTE; SUM(VACREDITO-VADEBITO)
+RPNP Cancelado: COCONTACONTABIL IN (631900000) AND GND IN (1,2,3,7) AND INMES BETWEEN 1 AND 12 AND COEXERCICIO = ANO_CORRENTE; SUM(VACREDITO-VADEBITO)
+
+ANO_CORRENTE (esclarecimento, 04/09/2026): NÃO é "o ano do calendário hoje" --
+é o exercício do MÊS DE REFERÊNCIA de cada linha da série de 12 meses exibida
+no painel. Cada linha tem sua própria janela móvel de 12 meses (que pode
+atravessar dois exercícios, ex.: referência Jan/2026 olha até Fev/2025), mas
+RPNP Inscrito/Cancelado são eventos de UM exercício específico -- o exercício
+usado é sempre o do mês de referência daquela linha, nunca um "ano atual"
+fixo e global.
+
+RPNP Inscrito -- disponibilidade do dado: o lançamento em INMES=12 do
+exercício corrente só existe a partir de janeiro do ano seguinte (dezembro
+precisa fechar e ser processado primeiro). Até lá, usa-se o valor do ÚLTIMO
+exercício que já tiver INMES=12 lançado (na prática, o exercício anterior,
+durante quase todo o ano) -- nunca zera enquanto isso não acontece.
 
 POUPANCA CORRENTE = [Despesa Corrente]/[Receita Corrente] em % com duas casas decimais
 

@@ -13,8 +13,10 @@
 --   Despesas Liquidadas   : COCONTACONTABIL IN (622130300,622130400)
 --                           GND via SUBSTR(CONATUREZA,2,1) IN (1,2,3)
 --
---   RPNP Inscrito         : COCONTACONTABIL IN (631100000,631200000)
---                           GND via SUBSTR(CONATUREZA,2,1) IN (1,2,3) | INMES=0
+--   RPNP Inscrito         : COCONTACONTABIL IN (622130500,622130600)
+--                           GND via SUBSTR(CONATUREZA,2,1) IN (1,2,3) | INMES=12
+--                           (regra alterada em 03/09/2026 -- antes vinha de
+--                           631100000/631200000 no encerramento, INMES=0)
 --
 --   RPNP Cancelado        : COCONTACONTABIL IN (631900000)
 --                           GND via SUBSTR(CONATUREZA,2,1) IN (1,2,3,7)
@@ -50,10 +52,10 @@ WHERE (
 
   OR
 
-    -- ── RPNP INSCRITO no encerramento do exercício (inmes=0) ─────────────
-    (   s.cocontacontabil IN (631100000, 631200000)
+    -- ── RPNP INSCRITO em dezembro do exercício corrente (inmes=12) ────────
+    (   s.cocontacontabil IN (622130500, 622130600)
     AND SUBSTR(s.conatureza, 2, 1) IN ('1', '2', '3')
-    AND s.inmes = 0)
+    AND s.inmes = 12)
 
   OR
 
