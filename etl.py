@@ -245,6 +245,17 @@ def load_fcdf_data(base_dir):
     # planilhas mantidas manualmente, evita a divergência de nome/cópia que já
     # aconteceu com REESTIMATIVA_SUAE) > data/fcdf.xlsx local (fallback de sempre,
     # mantém rodando numa máquina sem a pasta irmã).
+    #
+    # A pasta irmã é um conceito só da VM (E:/sites/interno, /publico e
+    # /planilhas lado a lado) -- no runner self-hosted do GitHub Actions
+    # (outra máquina, checkout em E:/Actions-runner/_work/publico/publico/)
+    # esse branch nunca bate, e não deveria: ali só o publico roda, então não
+    # existe o risco de duas cópias divergindo que a pasta compartilhada
+    # resolve na VM. O ambiente do GitHub Actions já tem seu próprio
+    # mecanismo, independente e correto pra esse caso -- o secret FCDF_PATH,
+    # setado no etl.yml -- por isso confirmado como decisão consciente
+    # (10/09/2026), não pendência: não precisa (e não deve) estender a pasta
+    # irmã pra lá.
     if FCDF_PATH:
         path = Path(FCDF_PATH)
     else:

@@ -124,6 +124,24 @@ Como o `schedule:` foi removido (ver acima), este é o **único** jeito de o ETL
 rodar no horário. Se esta tarefa não rodar, o ETL do GitHub simplesmente não
 acontece — silenciosamente.
 
+> ⚠️ **Incidente real (03-10/09/2026): PAT expirado, falha 100% silenciosa.**
+> O token usado no `disparar-etl.ps1` expirou em 03/09/2026. O script não tem
+> `try/catch` nem checagem de status HTTP — a chamada `Invoke-RestMethod`
+> lançava exceção a cada disparo, mas isso não propagava como código de saída
+> ≠0 pro Agendador de Tarefas: `DisparadorETL` seguiu reportando
+> `LastTaskResult: 0` (sucesso) todo santo dia, e o runner (`Runner.Listener`)
+> seguia "Listening for Jobs" normalmente — os dois pareciam saudáveis. Só que
+> nenhum `workflow_dispatch` chegava no GitHub, e nenhum `Worker_*.log` novo
+> aparecia em `_diag/`. O sumiço só foi percebido 7 dias depois, checando por
+> que o dado do dashboard não mudava. Token novo gerado em 10/09/2026 **sem
+> data de expiração**, pra não repetir — mas o script ainda não tem log/alerta
+> de falha, então uma revogação ou outro motivo de 401 no futuro **ainda
+> falharia do mesmo jeito, silenciosamente**. Ver item 8 de
+> `docs/plano_colaborador_e_ausencia.md` para a fragilidade irmã (dependência
+> de sessão Interactive) — mesma família de problema: as duas travas de
+> segurança deste mecanismo (sessão logada, token válido) podem cair sem
+> nenhum alerta.
+
 O script real (`E:\Actions-runner\disparar-etl.ps1`) dispara **dois**
 repositórios da org: `publico` e `unad`. Esqueleto (o PAT real está no arquivo,
 em texto puro — não replicar aqui):
