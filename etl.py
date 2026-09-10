@@ -240,10 +240,17 @@ def _rcl_emenda(cofonte, cofontefederal):
 
 
 def load_fcdf_data(base_dir):
+    # Resolução (10/09/2026): FCDF_PATH explícita > pasta irmã E:/sites/planilhas
+    # (compartilhada entre interno/publico -- decisão do usuário de centralizar
+    # planilhas mantidas manualmente, evita a divergência de nome/cópia que já
+    # aconteceu com REESTIMATIVA_SUAE) > data/fcdf.xlsx local (fallback de sempre,
+    # mantém rodando numa máquina sem a pasta irmã).
     if FCDF_PATH:
         path = Path(FCDF_PATH)
     else:
-        path = base_dir / "data" / "fcdf.xlsx"
+        path = base_dir.parent / "planilhas" / "fcdf.xlsx"
+        if not path.exists():
+            path = base_dir / "data" / "fcdf.xlsx"
     if not path.exists():
         log.warning(f"Planilha FCDF nao encontrada: {path}")
         return {"realizados": {}}
