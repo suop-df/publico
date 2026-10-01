@@ -29,20 +29,25 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .header-titles h1{font-size:1rem;font-weight:700;letter-spacing:.3px;line-height:1.3}
 .header-titles .subtitle{font-size:.75rem;opacity:.75;font-weight:400;margin-top:2px}
 .data-atualizacao{font-size:.7rem;opacity:.75;margin-top:4px;font-weight:400}
+.period-badge{background:rgba(255,255,255,.15);padding:6px 14px;border-radius:8px;font-size:.75rem;font-weight:600;flex-shrink:0}
 .btn-voltar{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;transition:background .2s;flex-shrink:0}
 .btn-voltar:hover{background:rgba(255,255,255,.25)}
 
 /* ═══ CONTENT ═══ */
 .content{padding:20px 28px 40px}
 
-/* ═══ TOPO: SELETOR + KPIs LADO A LADO ═══ */
-.topo-row{display:flex;gap:14px;margin-bottom:16px;align-items:stretch}
-.sel-panel{background:#fff;border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);flex-shrink:0;width:190px;display:flex;flex-direction:column;gap:6px}
-.sel-label{font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;display:block}
-.mes-select{font-family:inherit;font-size:.8rem;font-weight:600;padding:6px 8px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;width:100%}
-.mes-select:focus{border-color:var(--accent-500);outline:none}
-.sel-hint{font-size:.62rem;color:#94a3b8}
-/* Cards lado a lado */
+/* ═══ BIMESTRE SELECTOR (mesmo padrão da RCL) ═══ */
+.bim-bar{display:flex;align-items:center;gap:10px;background:#fff;border-radius:var(--radius);padding:12px 18px;box-shadow:var(--shadow-sm);margin-bottom:16px;flex-wrap:wrap}
+.bim-bar-label{font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;margin-right:4px}
+.bim-btn{font-family:inherit;font-size:.75rem;font-weight:600;padding:6px 14px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;transition:all .18s;white-space:nowrap}
+.bim-btn:hover:not(:disabled){border-color:var(--accent-500);color:var(--accent-800);background:var(--accent-50)}
+.bim-btn.active{background:var(--gradient);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(0,102,51,.25)}
+.bim-btn:disabled{opacity:.38;cursor:not-allowed;background:#f1f5f9;color:#94a3b8}
+.bim-btn-clear{font-family:inherit;font-size:.72rem;font-weight:500;padding:5px 11px;border-radius:8px;border:1.5px dashed #cbd5e1;background:transparent;color:#94a3b8;cursor:pointer;transition:all .18s}
+.bim-btn-clear:hover{border-color:var(--accent-400);color:var(--accent-700)}
+
+/* ═══ TOPO: KPIs ═══ */
+.topo-row{margin-bottom:16px}
 .kpi-col{display:flex;flex-direction:row;gap:14px;flex:1}
 .kpi-card{background:#fff;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);border-left:4px solid #cbd5e1;transition:box-shadow .2s,transform .2s;flex:1;min-width:0}
 .kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
@@ -83,8 +88,9 @@ tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transpa
 .footer{text-align:center;padding:14px 28px;font-size:.67rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff;line-height:1.6}
 
 /* ═══ RESPONSIVE ═══ */
-@media(max-width:1000px){.topo-row{flex-direction:column}.kpi-col{flex-direction:row;flex-wrap:wrap}}
+@media(max-width:1000px){.kpi-col{flex-direction:row;flex-wrap:wrap}}
 @media(max-width:640px){.kpi-col{flex-direction:column}}
+@media(max-width:768px){.bim-bar{gap:8px}}
 @media(max-width:768px){.header{padding:12px 16px;flex-wrap:wrap}.content{padding:12px 16px}}
 @media print{.header{print-color-adjust:exact;-webkit-print-color-adjust:exact}.kpi-card,.table-panel{break-inside:avoid}}
 </style>
@@ -105,19 +111,27 @@ tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transpa
     <div class="subtitle">RGF &mdash; Anexo II (LRF, art. 55, inciso I, al&#237;nea &quot;b&quot;) &middot; SEEC/SEFIN - Secretaria Executiva de Finan&#231;as, Or&#231;amento e Planejamento</div>
     <p class="data-atualizacao" id="data-atualizacao">Carregando dados&#8230;</p>
   </div>
+  <div class="period-badge" id="period-badge"></div>
   <a href="../" class="btn-voltar">&#8592; Voltar</a>
 </div>
 
 <!-- ══ CONTENT ══ -->
 <div class="content">
 
-  <!-- Seletor + KPIs na mesma linha -->
+  <!-- Bimestre Selector (mesmo padrão da RCL) -->
+  <div class="bim-bar" id="bim-bar">
+    <span class="bim-bar-label">Bimestre</span>
+    <button class="bim-btn" id="bim-1" onclick="onBimestreSelect(1)">1&#186; Bim<br><span style="font-weight:400;font-size:.68rem">jan&#183;fev</span></button>
+    <button class="bim-btn" id="bim-2" onclick="onBimestreSelect(2)">2&#186; Bim<br><span style="font-weight:400;font-size:.68rem">mar&#183;abr</span></button>
+    <button class="bim-btn" id="bim-3" onclick="onBimestreSelect(3)">3&#186; Bim<br><span style="font-weight:400;font-size:.68rem">mai&#183;jun</span></button>
+    <button class="bim-btn" id="bim-4" onclick="onBimestreSelect(4)">4&#186; Bim<br><span style="font-weight:400;font-size:.68rem">jul&#183;ago</span></button>
+    <button class="bim-btn" id="bim-5" onclick="onBimestreSelect(5)">5&#186; Bim<br><span style="font-weight:400;font-size:.68rem">set&#183;out</span></button>
+    <button class="bim-btn" id="bim-6" onclick="onBimestreSelect(6)">6&#186; Bim<br><span style="font-weight:400;font-size:.68rem">nov&#183;dez</span></button>
+    <button class="bim-btn-clear" id="bim-clear" onclick="onBimestreClear()" style="display:none">&#10005; Limpar filtro</button>
+  </div>
+
+  <!-- KPIs -->
   <div class="topo-row">
-    <div class="sel-panel">
-      <span class="sel-label">At&#233; o M&#234;s</span>
-      <select class="mes-select" id="fMes" onchange="refresh()"></select>
-      <div class="sel-hint">Saldo acumulado desde janeiro at&#233; o m&#234;s selecionado</div>
-    </div>
     <div class="kpi-col">
       <div class="kpi-card dc">
         <div class="kpi-label">D&#237;vida Consolidada (I)</div>
@@ -164,6 +178,7 @@ tr:not(.sep):hover td{background:color-mix(in srgb,var(--accent-100) 40%,transpa
 <script>
 var D, RCL;
 var MESES_NOME={1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'};
+var MESES_PT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fmtNum(v){
@@ -187,19 +202,48 @@ function fmtPct(v){
 }
 function dash(){return '<span style="color:#cbd5e1">–</span>';}
 
-// ─── SELETOR ────────────────────────────────────────────────────────────────
-function setupMesSelect(){
-  var sel=document.getElementById('fMes');
-  sel.innerHTML='';
-  for(var m=1;m<=D.max_mes;m++){
-    var opt=document.createElement('option');
-    opt.value=m; opt.textContent=m+' – '+MESES_NOME[m]; sel.appendChild(opt);
+// ─── SELETOR DE BIMESTRE (mesmo padrão/mecânica da RCL) ──────────────────────
+// Não filtra pra só 2 meses: escolhe QUAL mês de fechamento alimenta o
+// acumulado-desde-janeiro já existente (acumular/computeSnap não mudam).
+// Sem seleção = usa o último mês fechado (D.max_mes), igual ao comportamento
+// anterior do dropdown "Até o Mês".
+var activeBimestre=null;
+
+function setupBimestreBar(){
+  for(var b=1;b<=6;b++){
+    var btn=document.getElementById('bim-'+b);
+    btn.disabled = !(b*2 <= D.max_mes);
   }
-  sel.value=D.max_mes;
+}
+function onBimestreSelect(b){
+  if(activeBimestre===b){ onBimestreClear(); return; }
+  activeBimestre=b;
+  for(var i=1;i<=6;i++){
+    document.getElementById('bim-'+i).classList.toggle('active', i===b);
+  }
+  document.getElementById('bim-clear').style.display='';
+  refresh();
+}
+function onBimestreClear(){
+  activeBimestre=null;
+  for(var i=1;i<=6;i++){ document.getElementById('bim-'+i).classList.remove('active'); }
+  document.getElementById('bim-clear').style.display='none';
   refresh();
 }
 function getMesSelecionado(){
-  return parseInt(document.getElementById('fMes').value,10);
+  return activeBimestre!==null ? activeBimestre*2 : D.max_mes;
+}
+
+// Rótulo "mmm/aa" pros 12 meses terminando em (mesFim, D.ano) — mesmo formato
+// que o backend usa pros rótulos da RCL (f"{MESES_PT[m-1]}/{str(a)[2:]}").
+function getJanela12Label(mesFim){
+  var m=mesFim, a=D.ano;
+  var primeiro=null, ultimo=MESES_PT[mesFim-1]+'/'+String(a).slice(2);
+  for(var i=0;i<11;i++){
+    m--; if(m===0){ m=12; a--; }
+  }
+  primeiro=MESES_PT[m-1]+'/'+String(a).slice(2);
+  return primeiro+' a '+ultimo;
 }
 
 // ─── ACUMULAR SALDO ATÉ O MÊS SELECIONADO (contas patrimoniais) ─────────────
@@ -261,6 +305,7 @@ function refresh(){
   var snap=computeSnap(mes);
   renderKPIs(snap);
   renderTabela(snap);
+  document.getElementById('period-badge').textContent = getJanela12Label(mes)+' (mês fechado)';
 }
 
 function renderKPIs(s){
@@ -386,7 +431,8 @@ function renderTabela(s){
       var d=new Date(D.atualizado_em);
       el.textContent='Dados atualizados em: '+d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
     }
-    setupMesSelect();
+    setupBimestreBar();
+    refresh();
   }).catch(function(err){
     overlay.innerHTML='<div style="font-size:2rem">&#9888;&#65039;</div><div style="max-width:360px;text-align:center">Erro ao carregar dados: '+escHtml(err.message)+'</div>';
   });

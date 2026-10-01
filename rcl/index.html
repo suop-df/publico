@@ -333,7 +333,7 @@ function init(){
 function updatePeriodBadge(cols){
   var r0 = colToRotulo[cols[0]] || cols[0];
   var rN = colToRotulo[cols[cols.length-1]] || cols[cols.length-1];
-  var badge = r0 + ' a ' + rN;
+  var badge = r0 + ' a ' + rN + ' (mês fechado)';
   if(activeBimestre !== null) badge = activeBimestre + 'º Bimestre · ' + badge;
   document.getElementById('period-badge').textContent = badge;
 }
